@@ -15,7 +15,8 @@ import {
   Sparkles,
   Command,
   Settings,
-  ChevronDown
+  ChevronDown,
+  User
 } from 'lucide-react';
 import { Theme, TimelineEvent } from '../types';
 
@@ -187,18 +188,14 @@ export default function Navbar({
           )}
         </button>
 
-        {/* AI Researcher elegant dropdown badge */}
+        {/* Dynamic User Profile Badge */}
         <div className="flex items-center gap-2.5 px-3 py-1 rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-white/[0.02] dark:border-white/[0.04] cursor-pointer hover:bg-slate-50 transition-colors">
-          <div className="w-7.5 h-7.5 rounded-full bg-slate-350 dark:bg-slate-700 shrink-0 flex items-center justify-center overflow-hidden border border-slate-200">
-            <img 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80" 
-              alt="avatar" 
-              className="w-full h-full object-cover" 
-            />
+          <div className="w-7.5 h-7.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0 flex items-center justify-center overflow-hidden border border-indigo-200 dark:border-indigo-500/30">
+            <User className="w-4 h-4" />
           </div>
           <div className="flex flex-col text-left">
-            <span className="text-[11.5px] font-bold text-slate-800 dark:text-slate-200 leading-none">AI Researcher</span>
-            <span className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Workspace</span>
+            <span className="text-[11.5px] font-bold text-slate-800 dark:text-slate-200 leading-none">Guest Session</span>
+            <span className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Local Workspace</span>
           </div>
           <ChevronDown className="w-3 h-3 text-slate-450 ml-0.5" />
         </div>
