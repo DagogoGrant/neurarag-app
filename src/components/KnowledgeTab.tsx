@@ -60,6 +60,13 @@ export default function KnowledgeTab() {
     fetchDocs();
   }, []);
 
+  // Persist docs to localStorage so the Chat frontend can use them for dynamic mock citations
+  useEffect(() => {
+    if (docs.length > 0) {
+      localStorage.setItem('neurarag_docs', JSON.stringify(docs));
+    }
+  }, [docs]);
+
   const uploadFile = (file: File) => {
     const isPdf = file.name.toLowerCase().endsWith('.pdf');
     const reader = new FileReader();

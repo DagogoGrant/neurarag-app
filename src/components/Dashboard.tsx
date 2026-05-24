@@ -149,6 +149,12 @@ export default function Dashboard() {
         text: m.text
       }));
 
+      let customContextFiles: string[] = [];
+      try {
+        const localDocs = JSON.parse(localStorage.getItem('neurarag_docs') || '[]');
+        customContextFiles = localDocs.map((d: any) => d.name);
+      } catch (e) {}
+
       // Ingest call to Express + Gemini Server proxy
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -160,7 +166,8 @@ export default function Dashboard() {
           ollamaUrl: ollamaUrl,
           ollamaModel: ollamaModel,
           geminiApiKey: geminiApiKey,
-          openaiApiKey: openaiApiKey
+          openaiApiKey: openaiApiKey,
+          customContextFiles: customContextFiles
         })
       });
 
