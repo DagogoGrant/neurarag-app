@@ -197,8 +197,8 @@ Your answers are incredibly deep, accurate, concise, and structured with clean M
 Always try to use beautiful tabular data lists or short structured code loops when relevant to the user request.
 Respond naturally to: "${message}"`;
 
-      // Force mapping to the universally supported gemini-2.0-flash to bypass v1beta 404s
-      const mappedModel = 'gemini-2.0-flash';
+      // Force mapping to gemini-1.5-flash to bypass limit:0 quota errors on Free Tier keys
+      const mappedModel = 'gemini-1.5-flash';
 
       const response = await activeAi.models.generateContent({
         model: mappedModel, 
