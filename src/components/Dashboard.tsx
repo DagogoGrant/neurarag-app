@@ -129,14 +129,16 @@ export default function Dashboard({ session }: { session: Session }) {
 
   // Handle posting chat messages to express backend
   const handleSendMessage = async (text: string, files?: File[]) => {
-    if (!text.trim() || isSending) return;
+    if ((!text.trim() && (!files || files.length === 0)) || isSending) return;
+
+    const finalMessageText = text.trim() ? text : (files && files.length > 0 ? "Please analyze the attached document(s)." : "");
 
     // Construct local user message
     const timestampStr = new Date().toTimeString().split(' ')[0];
     const userMsg: Message = {
       id: `msg-user-${Date.now()}`,
       sender: 'user',
-      text: text,
+      text: finalMessageText,
       timestamp: timestampStr,
       attachedFiles: files ? files.map(f => ({ name: f.name, mimeType: f.type || 'application/octet-stream' })) : []
     };
@@ -238,8 +240,8 @@ export default function Dashboard({ session }: { session: Session }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: text,
-            history: [...chatHistory, { role: 'user', text: text }],
+            message: finalMessageText,
+            history: [...chatHistory, { role: 'user', text: finalMessageText }],
             model: selectedModel,
             ollamaUrl: ollamaUrl,
             ollamaModel: ollamaModel,
