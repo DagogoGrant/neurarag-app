@@ -18,6 +18,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     model: str = "gemini-1.5-flash"
+    geminiApiKey: str = ""
 
 @app.get("/api/health")
 def health_check():
@@ -26,10 +27,10 @@ def health_check():
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     try:
-        # Securely grab the API key from Vercel Environment Variables
-        api_key = os.environ.get("GEMINI_API_KEY")
+        # Enforce Bring Your Own Key (BYOK) architecture
+        api_key = req.geminiApiKey
         if not api_key:
-            return {"reply": "Error: GEMINI_API_KEY environment variable is missing on Vercel."}
+            return {"text": "### Please Provide Your API Key\n\nThe site owner has enforced a Bring Your Own Key architecture.\n\nPlease go to the **Settings** tab on the left sidebar and enter your Google Gemini API Key to continue.", "thought": "API Key missing. Instructed user to provide key.", "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0}, "sources": [], "timeline": []}
             
         llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash",
