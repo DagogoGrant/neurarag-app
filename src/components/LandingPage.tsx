@@ -28,7 +28,7 @@ export default function LandingPage() {
   }, []);
 
   const handleLaunchApp = () => {
-    navigate('/app');
+    navigate('/login');
   };
 
   return (
