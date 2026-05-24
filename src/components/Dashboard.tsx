@@ -354,7 +354,6 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
         {/* 2. Primary Layout Workspace Container */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Top Header Navbar */}
-          <Navbar
           <Navbar 
             theme={theme} 
             setTheme={setTheme} 
