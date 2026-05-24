@@ -38,7 +38,9 @@ import WorkflowsTab from './WorkflowsTab';
 import AnalyticsTab from './AnalyticsTab';
 import SettingsTab from './SettingsTab';
 
-export default function Dashboard() {
+import { Session } from '@supabase/supabase-js';
+
+export default function Dashboard({ session }: { session: Session }) {
   const [theme, setTheme] = useState<Theme>('dark');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile' | 'collage'>('desktop');
   const [activeTab, setActiveTab] = useState<'workspace' | 'knowledge' | 'workflows' | 'analytics' | 'settings'>('workspace');
@@ -353,14 +355,14 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Top Header Navbar */}
           <Navbar
-            theme={theme}
-            setTheme={setTheme}
+          <Navbar 
+            theme={theme} 
+            setTheme={setTheme} 
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
-            onSearch={(term) => console.log('Searching:', term)}
-            onTriggerCommandPalette={() => console.log('Palette toggled')}
             timelineEvents={timelineEvents}
             onClearNotifications={() => setTimelineEvents([])}
+            session={session}
           />
 
           {/* Dynamic Tab Panel switches */}

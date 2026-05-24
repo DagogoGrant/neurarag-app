@@ -2,22 +2,36 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Brain, ArrowRight, Github, Mail } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMsg('');
     
-    // Simulate authentication delay for realism
-    setTimeout(() => {
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert("Check your email for the confirmation link!");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate('/app');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "An error occurred during authentication.");
+    } finally {
       setIsLoading(false);
-      navigate('/app');
-    }, 1200);
+    }
   };
 
   return (
@@ -45,7 +59,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="mt-6 text-center text-3xl font-display font-extrabold text-white"
         >
-          Welcome back
+          {isSignUp ? "Create an account" : "Welcome back"}
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0, y: -10 }}
@@ -53,7 +67,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-2 text-center text-sm text-slate-400"
         >
-          Sign in to your private NeuraRAG workspace
+          {isSignUp ? "Join the NeuraRAG waitlist" : "Sign in to your private NeuraRAG workspace"}
         </motion.p>
       </div>
 
@@ -64,7 +78,13 @@ export default function LoginPage() {
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10"
       >
         <div className="bg-[#0b0d16] border border-white/[0.05] py-8 px-4 shadow-2xl shadow-black/50 sm:rounded-2xl sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleAuth}>
+            
+            {errorMsg && (
+              <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+                {errorMsg}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-300">
                 Email address
@@ -127,7 +147,7 @@ export default function LoginPage() {
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    Sign In
+                    {isSignUp ? "Create Account" : "Sign In"}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -159,10 +179,16 @@ export default function LoginPage() {
         </div>
         
         <p className="mt-8 text-center text-sm text-slate-500">
-          Don't have an account?{' '}
-          <a href="#" className="font-bold text-indigo-400 hover:text-indigo-300">
-            Sign up for Early Access
-          </a>
+          {isSignUp ? "Already have an account?" : "Don't have an account?"}{' '}
+          <button 
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setErrorMsg('');
+            }}
+            className="font-bold text-indigo-400 hover:text-indigo-300"
+          >
+            {isSignUp ? "Sign In Instead" : "Sign up for Early Access"}
+          </button>
         </p>
       </motion.div>
     </div>
