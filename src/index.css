@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* Next-gen theme color spectrum */
+  --color-cinematic-dark: #090a0f;
+  --color-cinematic-card: rgba(20, 22, 33, 0.45);
+  --color-cinematic-light: #faf9f6;
+  --color-cinematic-accent: #6366f1;
+}
+
+@layer utilities {
+  /* Translucent Glassmorphism preset */
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  
+  .dark .glass-panel {
+    background-color: rgba(15, 16, 26, 0.55);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .dark .glass-card {
+    background-color: rgba(24, 25, 35, 0.45);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  /* Cinematic ambient light bubbles */
+  .ambient-orb-indigo {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.09) 0%, rgba(99, 102, 241, 0) 70%);
+  }
+  
+  .dark .ambient-orb-indigo {
+    background: radial-gradient(circle, rgba(129, 140, 248, 0.12) 0%, rgba(99, 102, 241, 0) 75%);
+  }
+
+  .ambient-orb-rose {
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.03) 0%, rgba(244, 63, 94, 0) 65%);
+  }
+  
+  .dark .ambient-orb-rose {
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.05) 0%, rgba(244, 63, 94, 0) 70%);
+  }
+}
+
+/* Custom modern aesthetic styling for scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Base interactive transitions */
+button, select, input, textarea {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Subtle cinematic entrance animations */
+@keyframes cinematicEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cinematic-in {
+  animation: cinematicEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ambientPulse {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1) translate(15px, -15px);
+    opacity: 1;
+  }
+}
+
+.animate-ambient-pulse {
+  animation: ambientPulse 15s infinite ease-in-out;
+}
