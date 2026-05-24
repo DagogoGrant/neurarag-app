@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Access Supabase URL and Anon Key from environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Access Supabase URL and Anon Key from environment variables.
+// If they are missing, use a dummy placeholder to prevent the entire React app from crashing with a blank white screen.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder_key';
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
