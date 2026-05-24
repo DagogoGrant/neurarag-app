@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { documentsStore, splitTextIntoChunks, IngestedDocument } from '../_utils/store';
+import { documentsStore, splitTextIntoChunks, IngestedDocument } from '../_utils/store.js';
 
 export const config = {
   api: {

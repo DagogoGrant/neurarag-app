@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { documentsStore } from '../../_utils/store';
+import { documentsStore } from '../../_utils/store.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
