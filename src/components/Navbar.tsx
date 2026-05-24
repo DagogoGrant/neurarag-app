@@ -52,7 +52,7 @@ export default function Navbar({
 
   const models = [
     { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', desc: 'Google Cloud fast reasoning' },
-    { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', desc: 'Google Cloud complex reasoning' },
+    { id: 'gemini-pro-latest', label: 'Gemini Pro Latest', desc: 'Google Cloud complex reasoning' },
     { id: 'openai-gpt-4o', label: 'OpenAI GPT-4o', desc: 'OpenAI flagship reasoning model' },
     { id: 'openai-gpt-4o-mini', label: 'OpenAI GPT-4o-mini', desc: 'OpenAI fast lightweight reasoning' },
     { id: 'neurarag-simulation', label: 'NeuraRAG Simulation', desc: 'Mock pipeline response logs' },
