@@ -361,6 +361,7 @@ export default function WorkspaceTab({
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [showCitationPopup, setShowCitationPopup] = useState<Source | null>(null);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [newTagVal, setNewTagVal] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -370,11 +371,13 @@ export default function WorkspaceTab({
     "Compare Ada similarity indexing against Gemini embeddings dimension limits."
   ];
 
-  const handleSend = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!inputText.trim() || isSending) return;
-    onSendMessage(inputText);
-    setInputText('');
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim() || stagedFiles.length > 0) {
+      onSendMessage(inputText, stagedFiles);
+      setInputText('');
+      setStagedFiles([]);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -399,14 +402,14 @@ export default function WorkspaceTab({
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const filesArr = Array.from(e.dataTransfer.files) as File[];
-      onSendMessage(`[Uploaded File: ${filesArr[0].name}] Processed document metadata semantic analysis.`, filesArr);
+      setStagedFiles(prev => [...prev, ...filesArr]);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesArr = Array.from(e.target.files) as File[];
-      onSendMessage(`[Selected File: ${filesArr[0].name}] Ingesting document chunks...`, filesArr);
+      setStagedFiles(prev => [...prev, ...filesArr]);
     }
   };
 
@@ -667,8 +670,26 @@ export default function WorkspaceTab({
       <div className="p-5 border-t bg-transparent border-slate-200/75 dark:bg-[#0c0d12]/45 dark:border-white/[0.04] shrink-0">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto space-y-3">
           
-          <div className="relative rounded-2xl border bg-white border-slate-250/70 dark:bg-[#131520]/60 dark:border-white/[0.04] group focus-within:border-blue-500/50 focus-within:shadow-xl focus-within:shadow-blue-500/5 transition-all">
+          <div className="relative rounded-2xl border bg-white border-slate-250/70 dark:bg-[#131520]/60 dark:border-white/[0.04] group focus-within:border-blue-500/50 focus-within:shadow-xl focus-within:shadow-blue-500/5 transition-all flex flex-col">
             
+            {stagedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 pb-0">
+                {stagedFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1e2029] border border-slate-200 dark:border-white/[0.04] text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <FileUp className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="truncate max-w-[120px]">{f.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setStagedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                      className="ml-1.5 text-slate-400 hover:text-red-500 transition-colors font-bold"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -706,9 +727,9 @@ export default function WorkspaceTab({
 
               <button
                 type="submit"
-                disabled={isSending || !inputText.trim()}
+                disabled={isSending || (!inputText.trim() && stagedFiles.length === 0)}
                 className={`p-2 px-3 rounded-xl font-medium transition-all duration-150 flex items-center gap-1.5 text-xs
-                  ${inputText.trim() && !isSending
+                  ${(inputText.trim() || stagedFiles.length > 0) && !isSending
                     ? 'bg-[#2563eb] text-white shadow-md hover:bg-[#1d4ed8]'
                     : 'bg-slate-100 text-slate-350 dark:bg-white/[0.02] dark:text-slate-650'}`}
               >

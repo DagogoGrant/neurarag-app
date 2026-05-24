@@ -117,6 +117,16 @@ export default function Dashboard({ session }: { session: Session }) {
     }
   }, [theme]);
 
+  // Helper to convert File to Base64
+  const getBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   // Handle posting chat messages to express backend
   const handleSendMessage = async (text: string, files?: File[]) => {
     if (!text.trim() || isSending) return;
@@ -158,6 +168,22 @@ export default function Dashboard({ session }: { session: Session }) {
       } catch (e) {}
 
       let responseData: any = {};
+
+      let parsedFiles: any[] = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          try {
+            const base64Data = await getBase64(file);
+            parsedFiles.push({
+              mimeType: file.type || 'application/octet-stream',
+              data: base64Data,
+              name: file.name
+            });
+          } catch (e) {
+            console.error("Failed to parse file", e);
+          }
+        }
+      }
 
       if (selectedModel === 'ollama-local') {
         // BYPASS VERCEL: Directly fetch local Ollama from the browser to avoid Ngrok
@@ -218,7 +244,8 @@ export default function Dashboard({ session }: { session: Session }) {
             ollamaModel: ollamaModel,
             geminiApiKey: geminiApiKey,
             openaiApiKey: openaiApiKey,
-            customContextFiles: customContextFiles
+            customContextFiles: customContextFiles,
+            attachedFiles: parsedFiles
           })
         });
         responseData = await response.json();

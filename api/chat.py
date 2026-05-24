@@ -4,7 +4,7 @@ import urllib.request
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 app = FastAPI()
 
@@ -20,11 +20,17 @@ class ChatMessage(BaseModel):
     role: str
     text: str
 
+class AttachedFile(BaseModel):
+    mimeType: str
+    data: str
+    name: str
+
 class ChatRequest(BaseModel):
     message: str
     model: str = "gemini-1.5-flash"
     geminiApiKey: str = ""
     history: Optional[List[ChatMessage]] = []
+    attachedFiles: Optional[List[AttachedFile]] = []
 
 @app.get("/api/health")
 def health_check():
@@ -53,6 +59,20 @@ def chat(req: ChatRequest):
                 "role": "user",
                 "parts": [{"text": req.message}]
             })
+            
+        # If there are attached files, inject them into the last user message's parts for multimodal processing
+        if req.attachedFiles and contents:
+            file_parts = []
+            for file in req.attachedFiles:
+                # Gemini native inlineData schema
+                file_parts.append({
+                    "inlineData": {
+                        "mimeType": file.mimeType,
+                        "data": file.data
+                    }
+                })
+            # Prepend files before the text query
+            contents[-1]["parts"] = file_parts + contents[-1]["parts"]
             
         payload = {
             "systemInstruction": {
