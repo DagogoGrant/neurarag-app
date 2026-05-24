@@ -34,6 +34,20 @@ export default function LoginPage() {
     }
   };
 
+  const handleOAuthLogin = async (provider: 'github' | 'google') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/app`
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setErrorMsg(err.message || `Failed to login with ${provider}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#07080f] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       
@@ -166,11 +180,19 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
-              <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/[0.06] transition-all">
+              <button 
+                type="button" 
+                onClick={() => handleOAuthLogin('github')}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-colors text-sm font-medium text-slate-300 hover:text-white"
+              >
                 <Github className="w-4 h-4" />
                 GitHub
               </button>
-              <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/[0.06] transition-all">
+              <button 
+                type="button" 
+                onClick={() => handleOAuthLogin('google')}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-colors text-sm font-medium text-slate-300 hover:text-white"
+              >
                 <Mail className="w-4 h-4" />
                 Google
               </button>

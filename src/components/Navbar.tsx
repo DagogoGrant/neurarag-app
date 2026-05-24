@@ -16,7 +16,8 @@ import {
   Command,
   Settings,
   ChevronDown,
-  User
+  User,
+  LogOut
 } from 'lucide-react';
 import { Theme, TimelineEvent } from '../types';
 
@@ -47,6 +48,7 @@ export default function Navbar({
   session
 }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const models = [
     { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', desc: 'Google Cloud fast reasoning' },
@@ -194,26 +196,48 @@ export default function Navbar({
         </button>
 
         {/* Dynamic User Profile Badge */}
-        <div 
-          className="flex items-center gap-2.5 px-3 py-1 rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-white/[0.02] dark:border-white/[0.04] cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors"
-          onClick={async () => {
-            if (window.confirm("Are you sure you want to sign out?")) {
-              await supabase.auth.signOut();
-            }
-          }}
-          title="Click to sign out"
-        >
-          <div className="w-7.5 h-7.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0 flex items-center justify-center overflow-hidden border border-indigo-200 dark:border-indigo-500/30">
-            <User className="w-4 h-4" />
+        <div className="relative">
+          <div 
+            className="flex items-center gap-2.5 px-3 py-1 rounded-xl border border-slate-200 bg-slate-50/50 dark:bg-white/[0.02] dark:border-white/[0.04] cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors"
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+          >
+            <div className="w-7.5 h-7.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0 flex items-center justify-center overflow-hidden border border-indigo-200 dark:border-indigo-500/30">
+              <User className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col text-left max-w-[120px]">
+              <span className="text-[11.5px] font-bold text-slate-800 dark:text-slate-200 leading-none truncate">
+                {session?.user?.email || "Guest Session"}
+              </span>
+              <span className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                Secure Workspace
+              </span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
           </div>
-          <div className="flex flex-col text-left max-w-[120px]">
-            <span className="text-[11.5px] font-bold text-slate-800 dark:text-slate-200 leading-none truncate">
-              {session?.user?.email || "Guest Session"}
-            </span>
-            <span className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-              Secure Workspace
-            </span>
-          </div>
+
+          {/* Profile Dropdown */}
+          {showProfileMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0f111a] rounded-xl border border-slate-200 dark:border-white/[0.05] shadow-xl overflow-hidden z-50">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-white/[0.05]">
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Signed in as</p>
+                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                  {session?.user?.email || "Guest"}
+                </p>
+              </div>
+              <div className="p-1">
+                <button
+                  onClick={async () => {
+                    setShowProfileMenu(false);
+                    await supabase.auth.signOut();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors text-left font-medium"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
