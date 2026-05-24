@@ -70,6 +70,11 @@ export default function KnowledgeTab() {
         fileData = fileData.split(',')[1];
       }
 
+      // TRUNCATE: Prevent Vercel 4.5MB Free Tier Serverless limit crashes
+      if (fileData.length > 1000000) {
+        fileData = fileData.substring(0, 1000000);
+      }
+
       setIsLoading(true);
       try {
         const res = await fetch("/api/kb/upload", {
