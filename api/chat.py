@@ -24,7 +24,7 @@ def health_check():
     return {"status": "healthy", "message": "NeuraRAG Python Backend is running!"}
 
 @app.post("/api/chat")
-def chat(req: ChatRequest):
+async def chat(req: ChatRequest):
     try:
         # Securely grab the API key from Vercel Environment Variables
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -42,7 +42,7 @@ def chat(req: ChatRequest):
             HumanMessage(content=req.message)
         ]
         
-        response = llm.invoke(messages)
+        response = await llm.ainvoke(messages)
         return {
             "text": response.content,
             "thought": f"Processed successfully by {req.model} via LangChain RAG pipeline.",
