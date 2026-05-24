@@ -43,12 +43,21 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#07080f]/80 backdrop-blur-xl border-b border-white/[0.04] py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="flex items-center gap-2.5"
+          >
+            <motion.div 
+              whileHover={{ rotate: 180, scale: 1.1 }}
+              transition={{ duration: 0.4, type: "spring" }}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shadow-lg shadow-indigo-500/20"
+            >
               <Brain className="w-5 h-5 text-white" />
-            </div>
+            </motion.div>
             <span className="font-display font-bold text-xl tracking-wide text-white">NeuraRAG</span>
-          </div>
+          </motion.div>
           
           <div className="hidden md:flex items-center gap-8 text-[13.5px] font-medium text-slate-300">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -156,56 +165,82 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                 <Layers className="w-6 h-6 text-indigo-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-3">Multi-Agent Swarms</h3>
               <p className="text-[14px] text-slate-400 leading-relaxed">
                 Automatically deploy Planner, Retriever, Critic, and Synthesizer agents that collaborate to solve complex reasoning tasks in parallel.
               </p>
-            </div>
+            </motion.div>
 
             {/* Feature 2 */}
-            <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-300">
                 <Database className="w-6 h-6 text-sky-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-3">Local Vector Ingestion</h3>
               <p className="text-[14px] text-slate-400 leading-relaxed">
                 Drag and drop PDFs or TXT files to instantly compute dense embeddings and index them locally with zero external API calls.
               </p>
-            </div>
+            </motion.div>
 
             {/* Feature 3 */}
-            <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="p-8 rounded-3xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                 <Shield className="w-6 h-6 text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-white mb-3">Privacy-First Architecture</h3>
               <p className="text-[14px] text-slate-400 leading-relaxed">
                 Connect directly to local Ollama endpoints or your own private models to ensure sensitive enterprise data never leaves your network.
               </p>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* CTA Section */}
         <section className="py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-indigo-600/5 border-y border-indigo-500/10"></div>
-          <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="max-w-4xl mx-auto px-6 relative z-10 text-center"
+          >
             <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">Ready to upgrade your workflows?</h2>
             <p className="text-lg text-indigo-200/80 mb-10 max-w-2xl mx-auto">
               Join the elite developers building next-generation RAG systems with NeuraRAG's cutting-edge dashboard.
             </p>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleLaunchApp}
-              className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-2xl bg-white text-slate-900 text-[16px] font-bold hover:bg-slate-100 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.15)]"
+              className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-2xl bg-white text-slate-900 text-[16px] font-bold hover:bg-slate-100 transition-colors shadow-[0_0_40px_rgba(255,255,255,0.15)]"
             >
               Start Building Now
               <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </section>
       </main>
 
