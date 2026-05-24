@@ -137,7 +137,8 @@ export default function Dashboard({ session }: { session: Session }) {
       id: `msg-user-${Date.now()}`,
       sender: 'user',
       text: text,
-      timestamp: timestampStr
+      timestamp: timestampStr,
+      attachedFiles: files ? files.map(f => ({ name: f.name, mimeType: f.type || 'application/octet-stream' })) : []
     };
 
     // Update session store immediately

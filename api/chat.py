@@ -95,9 +95,13 @@ def chat(req: ChatRequest):
                 except (KeyError, IndexError):
                     reply_text = "Received an empty or malformed response from Google Gemini."
                     
+                thought_msg = f"Processed successfully by {req.model} via direct REST pipeline."
+                if req.attachedFiles:
+                    thought_msg += f" Received {len(req.attachedFiles)} attached file(s) for multimodal context."
+                    
                 return {
                     "text": reply_text,
-                    "thought": f"Processed successfully by {req.model} via direct REST pipeline.",
+                    "thought": thought_msg,
                     "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
                     "sources": [],
                     "timeline": []

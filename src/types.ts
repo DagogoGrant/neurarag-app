@@ -60,6 +60,7 @@ export interface Message {
   // Expandable reasoning block
   thought?: string;
   tokensUsed?: { prompt: number; completion: number; cost: number };
+  attachedFiles?: { name: string; mimeType: string }[];
 }
 
 export interface Conversation {

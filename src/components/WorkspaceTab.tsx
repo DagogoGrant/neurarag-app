@@ -551,6 +551,18 @@ export default function WorkspaceTab({
                         ? 'p-3.5 px-4.5 rounded-2xl bg-slate-100/80 text-slate-800 dark:bg-[#1a1b22] dark:text-slate-200 border border-slate-200/50 dark:border-transparent max-w-[85%] font-medium'
                         : 'bg-white border border-slate-150/70 shadow-sm p-6 rounded-2xl text-slate-800 dark:bg-transparent dark:border-none dark:shadow-none dark:p-0 dark:text-slate-200 w-full max-w-full text-[13.5px]'}`}
                   >
+                    {/* Render attached files for user messages */}
+                    {isUser && msg.attachedFiles && msg.attachedFiles.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {msg.attachedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/50 dark:bg-black/20 border border-slate-200/50 dark:border-white/[0.05] text-[11.5px] font-medium text-slate-700 dark:text-slate-300">
+                            <FileUp className="w-3.5 h-3.5 text-indigo-500" />
+                            <span className="truncate max-w-[150px]">{file.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Format list markdown or pre blocks simply and nicely */}
                     <div className="space-y-3 text-wrap break-words">
                       {renderFormattedMessage(msg.text)}
