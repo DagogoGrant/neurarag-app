@@ -183,6 +183,7 @@ export default function LandingPage() {
 
             {/* Feature 2 */}
             <motion.div 
+              id="architecture"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -200,6 +201,7 @@ export default function LandingPage() {
 
             {/* Feature 3 */}
             <motion.div 
+              id="security"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
