@@ -136,32 +136,12 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
               </div>
               <div className="aspect-[16/9] md:aspect-[21/9] bg-[#0c0d12] rounded-2xl border border-white/[0.04] flex items-center justify-center overflow-hidden relative">
-                {/* Simulated App View */}
-                <div className="absolute inset-0 flex">
-                  {/* Sidebar Mock */}
-                  <div className="w-48 border-r border-white/[0.04] p-4 hidden md:flex flex-col gap-3">
-                    <div className="w-24 h-4 rounded bg-white/[0.05] mb-4"></div>
-                    <div className="w-full h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20"></div>
-                    <div className="w-full h-8 rounded-lg bg-white/[0.02]"></div>
-                    <div className="w-full h-8 rounded-lg bg-white/[0.02]"></div>
-                  </div>
-                  {/* Main Mock */}
-                  <div className="flex-1 flex flex-col p-6 gap-4 relative">
-                    <div className="absolute right-0 top-0 w-64 h-full border-l border-white/[0.04] bg-[#0c0d12]/50 p-4 hidden lg:block">
-                      <div className="w-32 h-3 rounded bg-white/[0.05] mb-6"></div>
-                      <div className="w-full aspect-square rounded-xl bg-white/[0.02] border border-white/[0.04] mb-4 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full border border-indigo-500/30 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-                        </div>
-                      </div>
-                      <div className="w-full h-16 rounded-xl bg-white/[0.02] border border-white/[0.04]"></div>
-                    </div>
-                    <div className="w-full max-w-md mx-auto mt-8 flex flex-col gap-4">
-                      <div className="w-full h-24 rounded-2xl bg-white/[0.02] border border-white/[0.04] self-end rounded-tr-none"></div>
-                      <div className="w-3/4 h-32 rounded-2xl bg-slate-800/50 border border-slate-700/50 self-start rounded-tl-none"></div>
-                    </div>
-                  </div>
-                </div>
+                {/* Generated High-Fidelity UI Mockup */}
+                <img 
+                  src="/hero-mockup.png" 
+                  alt="NeuraRAG Interface" 
+                  className="w-full h-full object-cover object-top opacity-95 group-hover:opacity-100 transition-opacity"
+                />
               </div>
             </div>
           </motion.div>
