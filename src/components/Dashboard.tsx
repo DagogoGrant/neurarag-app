@@ -234,6 +234,56 @@ export default function Dashboard({ session }: { session: Session }) {
             timeline: []
           };
         }
+      } else if (selectedModel.startsWith('gemini')) {
+        // BYPASS VERCEL 4.5MB LIMIT: Directly fetch Gemini from the browser for large PDF support!
+        if (!geminiApiKey) {
+          responseData = {
+            text: "### Please Provide Your API Key\n\nThe site owner has enforced a Bring Your Own Key architecture.\n\nPlease go to the **Settings** tab on the left sidebar and enter your Google Gemini API Key to continue.",
+            thought: "API Key missing. Instructed user to provide key.",
+            tokensUsed: { prompt: 0, completion: 0, cost: 0 },
+            sources: [],
+            timeline: []
+          };
+        } else {
+          const contents = [...chatHistory, { role: 'user', text: finalMessageText }].map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.text }]
+          }));
+          
+          if (parsedFiles.length > 0 && contents.length > 0) {
+            const fileParts = parsedFiles.map(f => ({
+              inlineData: { mimeType: f.mimeType, data: f.data }
+            }));
+            contents[contents.length - 1].parts = [...fileParts, ...contents[contents.length - 1].parts];
+          }
+
+          const payload = {
+            systemInstruction: { parts: [{ text: "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown." }] },
+            contents: contents
+          };
+
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!res.ok) {
+            const errorBody = await res.text();
+            throw new Error(`Gemini API Error: ${res.status} ${res.statusText} - ${errorBody}`);
+          }
+          
+          const resJson = await res.json();
+          const replyText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "Received empty response from Google Gemini.";
+          
+          responseData = {
+            text: replyText,
+            thought: `Processed successfully by ${selectedModel} via DIRECT BROWSER REST pipeline. Bypassed Vercel 4.5MB limit. Received ${parsedFiles.length} attached file(s) for multimodal context.`,
+            tokensUsed: { prompt: resJson.usageMetadata?.promptTokenCount || 0, completion: resJson.usageMetadata?.candidatesTokenCount || 0, cost: 0 },
+            sources: [],
+            timeline: []
+          };
+        }
       } else {
         // Ingest call to Express + Gemini Server proxy
         const response = await fetch('/api/chat', {
