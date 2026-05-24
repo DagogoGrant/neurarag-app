@@ -86,7 +86,7 @@ export default function KnowledgeTab() {
         });
         const data = await res.json();
         if (data.success) {
-          fetchDocs();
+          setDocs(prev => [data.document, ...prev]);
         }
       } catch (err) {
         console.error(err);
@@ -125,7 +125,7 @@ export default function KnowledgeTab() {
       });
       const data = await res.json();
       if (data.success) {
-        fetchDocs();
+        setDocs(prev => prev.filter(d => d.id !== id));
       }
     } catch (err) {
       console.error(err);
