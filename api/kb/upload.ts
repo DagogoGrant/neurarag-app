@@ -1,6 +1,14 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { documentsStore, splitTextIntoChunks, IngestedDocument } from '../_utils/store.js';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+  },
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
