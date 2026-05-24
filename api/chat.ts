@@ -1,226 +1,14 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenAI } from '@google/genai';
+import { getQueryRelevantChunks } from './_utils/store';
 
-import express from "express";
-import path from "path";
-import { GoogleGenAI } from "@google/genai";
-import dotenv from "dotenv";
-import { PDFParse } from "pdf-parse";
-
-dotenv.config();
-
-const app = express();
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-const PORT = 3000;
-
-// Initialize Gemini SDK with telemetry header
-const apiKey = process.env.GEMINI_API_KEY;
-let ai: GoogleGenAI | null = null;
-
-if (apiKey) {
-  try {
-    ai = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
-    });
-    console.log("NeuraRAG: Server-side Gemini Client initialized successfully with API Key.");
-  } catch (error) {
-    console.error("Failed to initialize Gemini Client:", error);
-  }
-} else {
-  console.log("NeuraRAG: Running in dynamic high-fidelity simulation mode (no API Key found).");
-}
-
-// Global Knowledge Base stores (simulated in-memory)
-interface IngestedDocument {
-  id: string;
-  name: string;
-  size: string;
-  status: string;
-  chunksCount: number;
-  addedAt: string;
-  text?: string;
-  chunks?: string[];
-}
-
-// Simple word-based chunker for RAG partitioning
-function splitTextIntoChunks(text: string, chunkSize: number = 512, overlap: number = 128): string[] {
-  const words = text.split(/\s+/);
-  const chunks: string[] = [];
-  let i = 0;
-  while (i < words.length) {
-    const chunkWords = words.slice(i, i + chunkSize);
-    chunks.push(chunkWords.join(" "));
-    i += chunkSize - overlap;
-    if (chunkSize <= overlap) break; // prevent infinite loops
-  }
-  return chunks;
-}
-
-let documentsStore: IngestedDocument[] = [
-  { 
-    id: '1', 
-    name: 'neural_embeddings_v3.pdf', 
-    size: '2.4 MB', 
-    status: 'Indexed', 
-    chunksCount: 3, 
-    addedAt: '2026-05-23',
-    text: `Neural Embeddings Section 4.1: Deep dual-encoder models map sentence fragments to a shared vector space, ensuring similarity is equivalent to standard inner product computations. Vector similarity search uses Maximum Inner Product Search (MIPS) algorithms to quickly extract context from dense indexes. High precision encoders convert raw unstructured text paragraphs into 1536-dimensional vectors for semantic matching.`,
-    chunks: [
-      "Neural Embeddings Section 4.1: Deep dual-encoder models map sentence fragments to a shared vector space, ensuring similarity is equivalent to standard inner product computations.",
-      "Vector similarity search uses Maximum Inner Product Search (MIPS) algorithms to quickly extract context from dense indexes.",
-      "High precision encoders convert raw unstructured text paragraphs into 1536-dimensional vectors for semantic matching."
-    ]
-  },
-  { 
-    id: '2', 
-    name: 'rag_architectures_enterprise.txt', 
-    size: '412 KB', 
-    status: 'Indexed', 
-    chunksCount: 2, 
-    addedAt: '2026-05-21',
-    text: `Retrieval-Augmented Generation models query dense representations using MIPS search before passing contextual outputs into autoregressive decoders. This allows static large language models to maintain access to real-time, external, verified factual data sources, minimizing hallucinations.`,
-    chunks: [
-      "Retrieval-Augmented Generation models query dense representations using MIPS search before passing contextual outputs into autoregressive decoders.",
-      "This allows static large language models to maintain access to real-time, external, verified factual data sources, minimizing hallucinations."
-    ]
-  },
-  { 
-    id: '3', 
-    name: 'memqa_session_store.doc', 
-    size: '1.1 MB', 
-    status: 'Indexed', 
-    chunksCount: 1, 
-    addedAt: '2026-05-18',
-    text: `Workspaces configured with memory nodes preserve recent agent evaluations to bypass dense indexing latency for repetitive prompt intents, aligning contexts recursively.`,
-    chunks: [
-      "Workspaces configured with memory nodes preserve recent agent evaluations to bypass dense indexing latency for repetitive prompt intents, aligning contexts recursively."
-    ]
-  }
-];
-
-// Term Frequency vector cosine similarity search engine
-function getQueryRelevantChunks(query: string, topK: number = 3, minScore: number = 0.05): { chunk: string; source: string; score: number }[] {
-  const allChunks: { chunk: string; source: string }[] = [];
-  documentsStore.forEach(doc => {
-    const docChunks = doc.chunks || (doc.text ? splitTextIntoChunks(doc.text) : []);
-    docChunks.forEach(chunk => {
-      allChunks.push({ chunk, source: doc.name });
-    });
-  });
-
-  if (allChunks.length === 0) return [];
-
-  const queryTokens = query.toLowerCase().match(/\w+/g) || [];
-  if (queryTokens.length === 0) return [];
-
-  const scoredChunks = allChunks.map(item => {
-    const chunkTokens = item.chunk.toLowerCase().match(/\w+/g) || [];
-    const chunkFreqs: Record<string, number> = {};
-    chunkTokens.forEach(t => {
-      chunkFreqs[t] = (chunkFreqs[t] || 0) + 1;
-    });
-
-    let dotProduct = 0;
-    queryTokens.forEach(token => {
-      if (chunkFreqs[token]) {
-        dotProduct += chunkFreqs[token];
-      }
-    });
-
-    let chunkLengthSq = 0;
-    Object.values(chunkFreqs).forEach(v => {
-      chunkLengthSq += v * v;
-    });
-
-    const chunkLength = Math.sqrt(chunkLengthSq);
-    const queryLength = Math.sqrt(queryTokens.length);
-    
-    let score = 0;
-    if (chunkLength > 0 && queryLength > 0) {
-      score = dotProduct / (chunkLength * queryLength);
-    }
-
-    return {
-      chunk: item.chunk,
-      source: item.source,
-      score: score
-    };
-  });
-
-  return scoredChunks
-    .filter(item => item.score >= minScore)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK);
-}
-
-// Health endpoint
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", mode: ai ? "live" : "simulation", port: PORT });
-});
-
-// Fetch KB files
-app.get("/api/kb/documents", (req, res) => {
-  res.json(documentsStore);
-});
-
-// Delete knowledge base asset
-app.delete("/api/kb/documents/:id", (req, res) => {
-  const { id } = req.params;
-  documentsStore = documentsStore.filter(d => d.id !== id);
-  res.json({ success: true });
-});
-
-// Ingest target file
-app.post("/api/kb/upload", async (req, res) => {
-  const { name, size, text, isBinary, chunkSize, overlap } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: "Filename is required" });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    let fileText = text || "";
-    if (isBinary && name.toLowerCase().endsWith(".pdf")) {
-      const buffer = Buffer.from(text, "base64");
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
-      await parser.destroy();
-      fileText = result.text || "";
-    }
-
-    const chunks = splitTextIntoChunks(fileText, chunkSize || 512, overlap || 128);
-
-    const newDoc: IngestedDocument = {
-      id: String(documentsStore.length + 1),
-      name: name,
-      size: size || `${Math.ceil(fileText.length / 1024)} KB`,
-      status: 'Indexed',
-      chunksCount: chunks.length,
-      addedAt: new Date().toISOString().split('T')[0],
-      text: fileText,
-      chunks: chunks
-    };
-    
-    documentsStore.unshift(newDoc);
-    res.json({ success: true, document: newDoc });
-
-  } catch (err: any) {
-    console.error("File ingestion error:", err);
-    res.status(500).json({ error: `File parsing failed: ${err.message || err}` });
-  }
-});
-
-// Primary Chat Completion API
-app.post("/api/chat", async (req, res) => {
   const { message, history, model, ollamaUrl, ollamaModel, geminiApiKey, openaiApiKey } = req.body;
+  
   if (!message) {
     return res.status(400).json({ error: "Prompt message is empty" });
   }
@@ -236,9 +24,7 @@ app.post("/api/chat", async (req, res) => {
     const countCompletionTokens = textRep.length / 4 + 100;
     const totalPrompt = Math.floor(countPromptTokens);
     const totalComp = Math.floor(countCompletionTokens);
-    const latencyVal = Math.floor(Date.now() - start) || 840;
-
-    // Build timeline events
+    
     const timeline = [
       {
         id: 'ev-1',
@@ -274,13 +60,12 @@ app.post("/api/chat", async (req, res) => {
       }
     ];
 
-    // Build grounding sources dynamically based on actual cosine search results
     const retrieved = getQueryRelevantChunks(userPrompt, 4, 0.01);
     
-    const sources = retrieved.map((item, index) => ({
+    const sources: any[] = retrieved.map((item, index) => ({
       id: `src-${index + 1}`,
       title: item.source,
-      type: (item.source.toLowerCase().endsWith('.pdf') ? 'pdf' : (item.source.toLowerCase().endsWith('.csv') ? 'api' : 'doc')) as any,
+      type: (item.source.toLowerCase().endsWith('.pdf') ? 'pdf' : (item.source.toLowerCase().endsWith('.csv') ? 'api' : 'doc')),
       url: '#',
       confidence: item.score > 0 ? Number(item.score.toFixed(2)) : 0.85,
       snippet: item.chunk
@@ -290,7 +75,7 @@ app.post("/api/chat", async (req, res) => {
       sources.push({
         id: 'src-1',
         title: 'neural_embeddings_v3.pdf (Section 4.1)',
-        type: 'pdf' as const,
+        type: 'pdf',
         url: '#',
         confidence: 0.98,
         snippet: 'Deep dual-encoder models map sentence fragments to a shared vector space, ensuring similarity is equivalent to standard inner product computations.'
@@ -298,7 +83,7 @@ app.post("/api/chat", async (req, res) => {
       {
         id: 'src-2',
         title: 'RAG Architectures Whitepaper',
-        type: 'doc' as const,
+        type: 'doc',
         url: 'https://arxiv.org/abs/2005.11401',
         confidence: 0.89,
         snippet: 'Retrieval-Augmented Generation models query dense representations using MIPS search before passing contextual outputs into autoregressive decoders.'
@@ -324,7 +109,7 @@ app.post("/api/chat", async (req, res) => {
       
       const ollamaMessages = [
         { role: "system", content: "You are the backend core of NeuraRAG, an elite developer AI. Always respond in clean Markdown." },
-        ...history.map((h: any) => ({
+        ...(history || []).map((h: any) => ({
           role: h.role === "user" ? "user" : "assistant",
           content: h.text
         })),
@@ -332,7 +117,7 @@ app.post("/api/chat", async (req, res) => {
       ];
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
+      const timeoutId = setTimeout(() => controller.abort(), 9000); // Vercel free tier limit is 10s
 
       const response = await fetch(`${activeOllamaUrl}/api/chat`, {
         method: "POST",
@@ -372,10 +157,7 @@ Unable to reach your local Ollama node.
    \`\`\`bash
    ollama run ${ollamaModel || "llama3"}
    \`\`\`
-3. Verify that Ollama is configured to accept connections (CORS enabled). On macOS, you can set the environment variable and relaunch Ollama:
-   \`\`\`bash
-   OLLAMA_ORIGINS="*" ollama serve
-   \`\`\``;
+3. Verify that Ollama is configured to accept connections (CORS enabled).`;
       const metadata = generateSimulatedSteps(message, errText);
       return res.json({
         text: errText,
@@ -395,8 +177,7 @@ No Gemini API key was detected in the server environmental keys or your client s
 
 Please:
 1. Go to the **Settings** tab in the top-right header panel.
-2. Enter your API Key in the **Credentials & Providers** section under **Gemini API Key**.
-3. (Optional) Alternatively, you can add it to your server [\`.env\` file](file:///Users/grantjackdagogo/Desktop/neurarag/.env) as \`GEMINI_API_KEY\`.`;
+2. Enter your API Key in the **Credentials & Providers** section under **Gemini API Key**.`;
       const metadata = generateSimulatedSteps(message, errText);
       return res.json({
         text: errText,
@@ -417,7 +198,7 @@ Always try to use beautiful tabular data lists or short structured code loops wh
 Respond naturally to: "${message}"`;
 
       const response = await activeAi.models.generateContent({
-        model: model, // e.g. "gemini-3.5-flash" or "gemini-1.5-pro"
+        model: model, 
         contents: message,
         config: {
           systemInstruction: systemPrompt,
@@ -474,7 +255,7 @@ Please:
       const openaiModel = model === "openai-gpt-4o" ? "gpt-4o" : "gpt-4o-mini";
       const openaiMessages = [
         { role: "system", content: "You are the backend core of NeuraRAG, an elite developer AI. Always respond in clean Markdown." },
-        ...history.map((h: any) => ({
+        ...(history || []).map((h: any) => ({
           role: h.role === "user" ? "user" : "assistant",
           content: h.text
         })),
@@ -537,9 +318,7 @@ I am your active multi-agent orchestrator. Under the hood, I orchestrate special
 #### Quickstart Guide:
 1. **Knowledge Graph**: View entity connections dynamically mapped on the right-hand panel.
 2. **Agent Flow**: Watch operations transition from *Planner* → *Retriever* → *Memory* → *Critic* in the central visualization canvas.
-3. **Ingest Documents**: Paste, drag/drop files, or click **Knowledge Base** in the sidebar to add custom vector embeddings.
-
-How can I speed up your enterprise integration today? Try checking vector token weights or running compliance evaluations.`;
+3. **Ingest Documents**: Paste, drag/drop files, or click **Knowledge Base** in the sidebar to add custom vector embeddings.`;
   } else if (cleanedPrompt.includes("code") || cleanedPrompt.includes("write") || cleanedPrompt.includes("python")) {
     simulatedText = `Here is a custom Python class to initialize a dense vector index and execute a Cosine Similarity Search inside NeuraRAG:
 
@@ -554,42 +333,16 @@ class DenseVectorIndex:
 
     def insert(self, vector: list, metadata: dict):
         assert len(vector) == self.dimension, "Invalid embedding dimension"
-        # Standardize representation and append
         norm_v = np.array(vector) / np.linalg.norm(vector)
         self.vectors.append(norm_v)
         self.meta.append(metadata)
-
-    def query_similarity(self, query_v: list, top_k: int = 3):
-        # Normalize and compute standard dot product matches
-        norm_q = np.array(query_v) / np.linalg.norm(query_v)
-        scores = [np.dot(norm_q, target) for target in self.vectors]
-        matched_indices = np.argsort(scores)[::-1][:top_k]
-        
-        return [
-            {"score": float(scores[i]), "metadata": self.meta[i]}
-            for i in matched_indices
-        ]
-\`\`\`
-
-#### Key Metrics of local indexes:
-| Metric | Performance Rate | Baseline Target | Status |
-| :--- | :--- | :--- | :--- |
-| Latency | **14 ms** | < 50 ms | Optimal |
-| Accuracy | **99.4%** | > 95% | Compliant |
-| Embedding Dim | **1536** (Ada/Gemini) | 768 / 1536 | Default |`;
+\`\`\``;
   } else {
     simulatedText = `### Semantic Synthesis Result: *${message.slice(0, 40)}${message.length > 40 ? '...' : ''}*
 
 I have processed your instruction through the **NeuraRAG Multi-Agent Pipeline**. 
 
-The **Planner Agent** resolved your intent layout, the **Retriever Agent** extracted matching embeddings inside documents like \`neural_embeddings_v3.pdf\` with an outstanding **0.98 similarity confidence**, and the **Critic Agent** verified hallucination filters successfully.
-
-#### Core Insights:
-- **Embedding vector alignment** matches query nodes correctly.
-- Entity clusters have been updated in your visual semantic map shown in the **Knowledge Graph**.
-- Short-term parameters are saved into local contextual memory.
-
-Would you like to analyze structural vector tables, check the index timelines, or fine-tune neural hyper-parameters? Let me know!`;
+The **Planner Agent** resolved your intent layout, the **Retriever Agent** extracted matching embeddings inside documents with an outstanding **0.98 similarity confidence**, and the **Critic Agent** verified hallucination filters successfully.`;
   }
 
   const simulatedMetadata = generateSimulatedSteps(message, simulatedText);
@@ -597,32 +350,5 @@ Would you like to analyze structural vector tables, check the index timelines, o
     text: simulatedText,
     thought: "Simulation pipeline activated. Synthesizer formulated detailed structural responses with tabular results.",
     ...simulatedMetadata
-  });
-});
-
-// Serve static build or delegate to Vite in Dev
-const isProduction = process.env.NODE_ENV === "production";
-
-if (!isProduction) {
-  // We dynamic import createServer to keep runtime light in prod
-  import("vite").then(({ createServer: createViteServer }) => {
-    createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    }).then((vite) => {
-      app.use(vite.middlewares);
-      app.listen(PORT, "0.0.0.0", () => {
-        console.log(`NeuraRAG Core Development Server Running on port ${PORT}`);
-      });
-    });
-  });
-} else {
-  const distPath = path.join(process.cwd(), "dist");
-  app.use(express.static(distPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`NeuraRAG Core Production Server Active on port ${PORT}`);
   });
 }
