@@ -62,7 +62,7 @@ def chat(req: ChatRequest):
         }
         
         data = json.dumps(payload).encode('utf-8')
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{req.model}:generateContent?key={api_key}"
         
         req_obj = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
         
