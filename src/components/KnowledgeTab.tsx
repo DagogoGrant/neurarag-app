@@ -158,17 +158,30 @@ export default function KnowledgeTab() {
       
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200/80 dark:border-white/[0.06] pb-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-3">
-            <div className="p-2 bg-indigo-100/50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-xl">
-              <Database className="w-5 h-5" />
-            </div>
+       {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+            <Database className="w-5 h-5 text-indigo-400" />
+          </div>
+          <h2 className="text-2xl font-sans font-bold text-slate-800 dark:text-white tracking-tight">
             Knowledge Base Assets
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-            Upload custom context manuals, configure semantic partitions, and deploy high-density neural vectors.
-          </p>
         </div>
+        <p className="text-[13px] text-slate-500 dark:text-slate-400 font-sans mt-2 max-w-2xl leading-relaxed">
+          Upload custom context manuals, configure semantic partitions, and deploy high-density neural vectors.
+        </p>
+
+        <div className="mt-4 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 flex gap-3 max-w-2xl">
+          <div className="text-sky-400 mt-0.5"><Database className="w-4 h-4" /></div>
+          <div>
+            <h4 className="text-sky-700 dark:text-sky-300 font-semibold text-xs mb-1">Need to analyze PDF Slides or Images?</h4>
+            <p className="text-sky-600/80 dark:text-sky-200/70 text-[11px] leading-relaxed">
+              The global Knowledge Base uses text-only chunking. For native, rich multimodal analysis of charts, graphs, and visual slides, please switch to the <strong>Workspace</strong> tab and use the <strong>Paperclip icon</strong> inside the chat box!
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
 
       {/* Main Grid Panels */}
