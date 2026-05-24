@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import { documentsStore, splitTextIntoChunks, IngestedDocument } from '../_utils/store';
 
 export const config = {
@@ -25,8 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let fileText = text || "";
     if (isBinary && name.toLowerCase().endsWith(".pdf")) {
       const buffer = Buffer.from(text, "base64");
-      const data = await pdfParse(buffer);
-      fileText = data.text || "";
+      const parser = new PDFParse({ data: buffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      fileText = result.text || "";
     }
 
     const chunks = splitTextIntoChunks(fileText, chunkSize || 512, overlap || 128);

@@ -1,2 +1,3 @@
 const { PDFParse } = require('pdf-parse');
-console.log(Object.keys(new PDFParse({ data: Buffer.from("test") })));
+const parser = new PDFParse({ data: Buffer.from("test") });
+console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(parser)));
