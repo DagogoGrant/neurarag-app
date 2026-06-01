@@ -24,14 +24,24 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
     setTestStatus('testing');
     setTestError('');
     try {
-      const res = await fetch(`/api/proxy/test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseUrl, apiKey })
+      const endpoint = baseUrl.endsWith('/') ? `${baseUrl}models` : `${baseUrl}/models`;
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
       });
-      const data = await res.json();
-      if (!res.ok || data.status === 'error') {
-        throw new Error(data.message || `Status ${res.status}: ${res.statusText}`);
+      
+      if (!res.ok) {
+        let errorMsg = `Status ${res.status}: ${res.statusText}`;
+        try {
+          const errData = await res.json();
+          if (errData.error?.message) errorMsg = errData.error.message;
+        } catch (e) {
+          // Ignore json parse error for non-json responses
+        }
+        throw new Error(errorMsg);
       }
       setTestStatus('success');
     } catch (err: any) {
