@@ -25,27 +25,28 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
     setTestStatus('testing');
     setTestError('');
     try {
-      const endpoint = baseUrl.endsWith('/') ? `${baseUrl}models` : `${baseUrl}/models`;
-      const res = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await fetch(`/api/proxy/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ baseUrl, apiKey })
       });
       
-      if (!res.ok) {
-        let errorMsg = `Status ${res.status}: ${res.statusText}`;
-        try {
-          const errData = await res.json();
-          if (errData.error?.message) errorMsg = errData.error.message;
-        } catch (e) {
-          // Ignore json parse error for non-json responses
-        }
-        throw new Error(errorMsg);
+      if (res.status === 504 || res.status === 502 || res.status === 404) {
+        throw new Error("Backend offline. Please start the Python backend (e.g. 'vercel dev') to bypass CORS.");
+      }
+
+      const resText = await res.text();
+      let resData;
+      try {
+        resData = JSON.parse(resText);
+      } catch (e) {
+        throw new Error("Backend offline or returned invalid response. Please start the Python backend.");
+      }
+
+      if (!res.ok || resData.status === 'error') {
+        throw new Error(resData.message || `Status ${res.status}: ${res.statusText}`);
       }
       
-      const resData = await res.json();
       if (resData && resData.data && Array.isArray(resData.data)) {
         const models = resData.data.map((m: any) => m.id);
         setAvailableModels(models);
