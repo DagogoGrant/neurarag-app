@@ -10,7 +10,7 @@ interface ProviderModalProps {
 export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
   const [type, setType] = useState('OpenAI');
   const [name, setName] = useState('');
-  const [baseUrl, setBaseUrl] = useState('https://api.openai.com/v1');
+  const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
