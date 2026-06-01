@@ -207,10 +207,27 @@ export default function Dashboard({ session }: { session: Session }) {
         const activeOllamaUrl = (ollamaUrl || "http://localhost:11434").replace(/\/$/, "");
         const activeOllamaModel = ollamaModel || "llama3";
         
+        let finalPrompt = text;
+        if (files && files.length > 0) {
+          let extractedText = "";
+          for (const file of files) {
+            if (file.type === 'application/pdf') {
+              try {
+                const pdfText = await extractTextFromPdf(file);
+                extractedText += `\n\n--- Start of ${file.name} ---\n${pdfText}\n--- End of ${file.name} ---`;
+              } catch (e) {
+                console.error("Failed to extract PDF text", e);
+                extractedText += `\n\n[Failed to read contents of ${file.name}]`;
+              }
+            }
+          }
+          finalPrompt += extractedText;
+        }
+
         const ollamaMessages = [
           { role: "system", content: "You are the backend core of NeuraRAG, an elite developer AI. Always respond in clean Markdown." },
           ...chatHistory,
-          { role: "user", content: text }
+          { role: "user", content: finalPrompt }
         ];
 
         try {
