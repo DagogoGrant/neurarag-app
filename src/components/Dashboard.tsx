@@ -226,7 +226,10 @@ export default function Dashboard({ session }: { session: Session }) {
 
         const ollamaMessages = [
           { role: "system", content: "You are the backend core of NeuraRAG, an elite developer AI. Always respond in clean Markdown." },
-          ...chatHistory,
+          ...chatHistory.map(m => ({
+            role: m.role === 'model' ? 'assistant' : m.role,
+            content: m.text
+          })),
           { role: "user", content: finalPrompt }
         ];
 
@@ -291,7 +294,10 @@ export default function Dashboard({ session }: { session: Session }) {
         
         const openAiMessages = [
           { role: "system", content: "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown." },
-          ...chatHistory,
+          ...chatHistory.map(m => ({
+            role: m.role === 'model' ? 'assistant' : m.role,
+            content: m.text
+          })),
           { role: "user", content: finalPrompt }
         ];
 
