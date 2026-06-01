@@ -147,7 +147,8 @@ def proxy_test(req: ProxyTestRequest):
             'Accept': 'application/json'
         }, method='GET')
         with urllib.request.urlopen(req_obj) as response:
-            return {"status": "success"}
+            payload = json.loads(response.read())
+            return {"status": "success", "data": payload}
     except urllib.error.HTTPError as e:
         err_msg = e.read().decode('utf-8')
         return {"status": "error", "message": f"HTTP {e.code}: {err_msg}"}

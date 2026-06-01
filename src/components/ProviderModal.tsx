@@ -47,8 +47,11 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
         throw new Error(resData.message || `Status ${res.status}: ${res.statusText}`);
       }
       
-      if (resData && resData.data && Array.isArray(resData.data)) {
-        const models = resData.data.map((m: any) => m.id);
+      // Our proxy returns the response inside a 'data' field.
+      // A standard OpenAI /models response puts the models in a 'data' array.
+      // So we access resData.data.data
+      if (resData && resData.data && resData.data.data && Array.isArray(resData.data.data)) {
+        const models = resData.data.data.map((m: any) => m.id);
         setAvailableModels(models);
         if (models.length > 0 && !model) {
           setModel(models[0]);
