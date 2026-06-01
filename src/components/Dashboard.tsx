@@ -648,7 +648,7 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
             {activeTab === 'knowledge' && <KnowledgeTab />}
 
             {/* TAB 3: Visual Workflows Blueprint Orchestrations */}
-            {activeTab === 'workflows' && <WorkflowsTab />}
+            {activeTab === 'workflows' && <WorkflowsTab selectedModel={selectedModel} customProviders={customProviders} />}
 
             {/* TAB 4: Billing Costs and Performance analytics */}
             {activeTab === 'analytics' && <AnalyticsTab conversations={conversations} />}

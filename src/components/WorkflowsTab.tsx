@@ -14,6 +14,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import CustomNode from './workflow/CustomNode';
+import { CustomProvider } from '../types';
 
 import {
   GitFork,
@@ -22,6 +23,9 @@ import {
   Settings2,
   CheckCircle2,
   Save,
+  X,
+  Cpu,
+  Loader2
 } from 'lucide-react';
 
 interface WorkflowTemplate {
@@ -33,9 +37,14 @@ interface WorkflowTemplate {
   status: 'active' | 'draft';
 }
 
+interface WorkflowsTabProps {
+  selectedModel?: string;
+  customProviders?: CustomProvider[];
+}
+
 const initialNodes: Node[] = [
   { id: 'n-1', type: 'custom', position: { x: 30, y: 110 }, data: { id: 'n-1', label: 'User Trigger', type: 'Trigger', desc: 'Incoming prompt payload', delay: '0 ms', status: 'Completed', colorClass: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' } },
-  { id: 'n-2', type: 'custom', position: { x: 250, y: 110 }, data: { id: 'n-2', label: 'Query Intent Planner', type: 'Agent', desc: 'Formulates query strategy', delay: '124 ms', status: 'Active', colorClass: 'bg-blue-50 text-blue-705 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100 dark:border-blue-500/20' } },
+  { id: 'n-2', type: 'custom', position: { x: 250, y: 110 }, data: { id: 'n-2', label: 'Query Intent Planner', type: 'Agent', desc: 'Formulates query strategy', delay: '124 ms', status: 'Idle', colorClass: 'bg-blue-50 text-blue-705 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100 dark:border-blue-500/20' } },
   { id: 'n-3', type: 'custom', position: { x: 480, y: 30 }, data: { id: 'n-3', label: 'Deep Vector Retriever', type: 'Retrieval', desc: 'Indexes metadata blocks', delay: '412 ms', status: 'Idle', colorClass: 'bg-indigo-50 text-indigo-705 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-100 dark:border-indigo-500/20' } },
   { id: 'n-4', type: 'custom', position: { x: 480, y: 190 }, data: { id: 'n-4', label: 'Hallucination Critic', type: 'Validation', desc: 'Validates factual alignment', delay: '202 ms', status: 'Idle', colorClass: 'bg-amber-50 text-amber-705 dark:bg-amber-500/10 dark:text-amber-400 border-amber-100 dark:border-amber-500/20' } },
   { id: 'n-5', type: 'custom', position: { x: 700, y: 110 }, data: { id: 'n-5', label: 'Response Synthesizer', type: 'Agent', desc: 'Generates final output text', delay: '98 ms', status: 'Idle', colorClass: 'bg-violet-50 text-violet-705 dark:bg-violet-500/10 dark:text-violet-400 border-violet-100 dark:border-violet-500/20' } }
@@ -49,7 +58,44 @@ const initialEdges: Edge[] = [
   { id: 'e4-5', source: 'n-4', target: 'n-5', style: { stroke: '#8b5cf6', strokeWidth: 2 } }
 ];
 
-export default function WorkflowsTab() {
+function getTopologicalSort(nodes: Node[], edges: Edge[]): Node[] | null {
+  const adjList = new Map<string, string[]>();
+  const inDegree = new Map<string, number>();
+  
+  nodes.forEach(n => {
+    adjList.set(n.id, []);
+    inDegree.set(n.id, 0);
+  });
+  
+  edges.forEach(e => {
+    if (!adjList.has(e.source)) adjList.set(e.source, []);
+    adjList.get(e.source)!.push(e.target);
+    inDegree.set(e.target, (inDegree.get(e.target) || 0) + 1);
+  });
+  
+  const queue: string[] = [];
+  inDegree.forEach((degree, id) => {
+    if (degree === 0) queue.push(id);
+  });
+  
+  const sorted: string[] = [];
+  while(queue.length > 0) {
+    const curr = queue.shift()!;
+    sorted.push(curr);
+    const neighbors = adjList.get(curr) || [];
+    neighbors.forEach(neighbor => {
+      inDegree.set(neighbor, inDegree.get(neighbor)! - 1);
+      if (inDegree.get(neighbor) === 0) {
+        queue.push(neighbor);
+      }
+    });
+  }
+  
+  if (sorted.length !== nodes.length) return null; // cycle detected
+  return sorted.map(id => nodes.find(n => n.id === id)!);
+}
+
+export default function WorkflowsTab({ selectedModel = '', customProviders = [] }: WorkflowsTabProps) {
   const [templates] = useState<WorkflowTemplate[]>([
     { id: '1', name: 'Self-Corrective RAG Loop', desc: 'Retrieved chunks are passed back to Critic for hallucination checking before Synthesizer execution QA.', nodesCount: 5, triggerType: 'API POST', status: 'active' },
     { id: '2', name: 'Deep Multi-Agent Legal Grounding', desc: 'Planner agent splits task. Parallel retrievers query judicial vector store chunks, validated by compliance evaluator.', nodesCount: 7, triggerType: 'Webhook Pull', status: 'active' },
@@ -65,6 +111,13 @@ export default function WorkflowsTab() {
 
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const [isExecuting, setIsExecuting] = useState(false);
+  
+  const [resultModal, setResultModal] = useState<{show: boolean; logs: {node: string; output: string}[]; finalOutput: string}>({
+    show: false,
+    logs: [],
+    finalOutput: ''
+  });
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -88,6 +141,87 @@ export default function WorkflowsTab() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
   }, []);
+
+  const handleRunSpec = async () => {
+    const sortedNodes = getTopologicalSort(nodes, edges);
+    if (!sortedNodes) {
+      alert("Execution Error: The workflow graph contains an invalid cycle. Please fix your connections and try again.");
+      return;
+    }
+
+    const userInput = prompt("TRIGGER REQUIRED: Enter a starting prompt for the workflow:", "Analyze the latest parallel RAG models");
+    if (!userInput) return;
+
+    setIsExecuting(true);
+    setResultModal({ show: false, logs: [], finalOutput: '' });
+    
+    // Reset all nodes to idle
+    setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'Idle', delay: '0 ms' } })));
+
+    let currentContext = userInput;
+    let finalWorkflowResult = "";
+    const executionLogs: {node: string; output: string}[] = [];
+
+    for (const node of sortedNodes) {
+      const startTime = Date.now();
+      
+      // Set current node to active
+      setNodes(nds => nds.map(n => n.id === node.id ? { ...n, data: { ...n.data, status: 'Active' } } : n));
+      
+      let nodeOutput = "";
+
+      if (node.data.type === 'Trigger') {
+        nodeOutput = currentContext;
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } else {
+        const provider = customProviders.find(p => p.id === selectedModel);
+        
+        try {
+          if (provider) {
+            // Execute on custom OpenAI provider
+            const systemPrompt = `You are a NeuraRAG Workflow Node. \nNode Type: ${node.data.type}\nNode Function: ${node.data.desc}\n\nYou must process the input payload and generate an output. ALWAYS format your output in clear Markdown. Only output the result of your specific node function.`;
+            
+            const res = await fetch('/api/proxy/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                baseUrl: provider.baseUrl,
+                apiKey: provider.apiKey,
+                model: provider.model,
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: `INPUT PAYLOAD FROM PREVIOUS NODE:\n\n${currentContext}` }
+                ],
+                temperature: 0.7
+              })
+            });
+
+            if (!res.ok) throw new Error("API Error");
+            const data = await res.json();
+            nodeOutput = data.choices[0].message.content;
+          } else {
+            // Simulated execution for Gemini or Ollama if provider API is not selected
+            nodeOutput = `[Simulated Output for ${node.data.label}] Node processed the data successfully based on its function: "${node.data.desc}". Input was: "${currentContext.substring(0, 30)}..."`;
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+        } catch (error) {
+          nodeOutput = `[Execution Failure] Node ${node.data.label} failed to process payload due to an API error. Ensure your Custom Provider API is online and the model name is correct.`;
+        }
+      }
+
+      currentContext = nodeOutput;
+      finalWorkflowResult = nodeOutput;
+      executionLogs.push({ node: node.data.label as string, output: nodeOutput });
+
+      const elapsed = Date.now() - startTime;
+      
+      // Mark as completed
+      setNodes(nds => nds.map(n => n.id === node.id ? { ...n, data: { ...n.data, status: 'Completed', delay: `${elapsed} ms` } } : n));
+    }
+
+    setIsExecuting(false);
+    setResultModal({ show: true, logs: executionLogs, finalOutput: finalWorkflowResult });
+  };
 
   return (
     <div className="w-full h-full p-6 space-y-6 overflow-y-auto select-none bg-transparent font-sans">
@@ -186,8 +320,13 @@ export default function WorkflowsTab() {
               <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200">{selectedTemplate.name}</span>
             </div>
             <div>
-              <button className="px-3 py-1.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-transparent rounded-xl flex items-center gap-1.5 transition-all cursor-pointer">
-                <Play className="w-3 h-3 fill-emerald-700 dark:fill-emerald-400" /> Run Spec
+              <button 
+                onClick={handleRunSpec}
+                disabled={isExecuting}
+                className="px-3 py-1.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-transparent rounded-xl flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isExecuting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3 fill-emerald-700 dark:fill-emerald-400" />}
+                {isExecuting ? 'Executing...' : 'Run Spec'}
               </button>
             </div>
           </div>
@@ -291,6 +430,44 @@ export default function WorkflowsTab() {
         </div>
 
       </div>
+
+      {/* Execution Results Modal */}
+      {resultModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-[#111218] border border-slate-200 dark:border-white/[0.1] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#111218]">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                <Cpu className="w-5 h-5" />
+                <h3 className="font-bold text-sm">Execution Engine Result</h3>
+              </div>
+              <button onClick={() => setResultModal({ ...resultModal, show: false })} className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/[0.1] transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-6 space-y-6">
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Workflow Execution Trace</h4>
+                <div className="space-y-3">
+                  {resultModal.logs.map((log, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/[0.05] rounded-xl text-sm text-slate-600 dark:text-slate-300">
+                      <div className="font-bold text-blue-600 dark:text-blue-400 text-xs mb-1">[{log.node}]</div>
+                      <div className="whitespace-pre-wrap">{log.output}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Final Synthesized Output</h4>
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-sm font-semibold text-emerald-900 dark:text-emerald-300 whitespace-pre-wrap">
+                  {resultModal.finalOutput}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
