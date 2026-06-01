@@ -291,7 +291,7 @@ function parseNonCodeMarkdown(text: string, baseKey: number): React.ReactNode[] 
   return elements;
 }
 
-function renderFormattedMessage(text: string) {
+export function renderFormattedMessage(text: string) {
   if (!text) return null;
 
   // Pattern to match fenced code blocks

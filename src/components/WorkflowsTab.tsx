@@ -15,6 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import CustomNode from './workflow/CustomNode';
 import { CustomProvider } from '../types';
+import { renderFormattedMessage } from './WorkspaceTab';
 
 import {
   GitFork,
@@ -196,16 +197,17 @@ export default function WorkflowsTab({ selectedModel = '', customProviders = [] 
               })
             });
 
-            if (!res.ok) throw new Error("API Error");
+            if (!res.ok) throw new Error(`API Error: ${res.status} - ${await res.text()}`);
             const data = await res.json();
+            if (data.status === 'error') throw new Error(data.message);
             nodeOutput = data.text || "No response received.";
           } else {
             // Simulated execution for Gemini or Ollama if provider API is not selected
             nodeOutput = `[Simulated Output for ${node.data.label}] Node processed the data successfully based on its function: "${node.data.desc}". Input was: "${currentContext.substring(0, 30)}..."`;
             await new Promise(resolve => setTimeout(resolve, 1500));
           }
-        } catch (error) {
-          nodeOutput = `[Execution Failure] Node ${node.data.label} failed to process payload due to an API error. Ensure your Custom Provider API is online and the model name is correct.`;
+        } catch (error: any) {
+          nodeOutput = `[Execution Failure] Node ${node.data.label} failed due to an error: ${error.message}`;
         }
       }
 
@@ -450,9 +452,9 @@ export default function WorkflowsTab({ selectedModel = '', customProviders = [] 
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Workflow Execution Trace</h4>
                 <div className="space-y-3">
                   {resultModal.logs.map((log, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/[0.05] rounded-xl text-sm text-slate-600 dark:text-slate-300">
-                      <div className="font-bold text-blue-600 dark:text-blue-400 text-xs mb-1">[{log.node}]</div>
-                      <div className="whitespace-pre-wrap">{log.output}</div>
+                    <div key={idx} className="p-4 bg-[#f8fafc] dark:bg-[#15161d] border border-slate-200 dark:border-white/[0.05] rounded-xl text-[13px] text-slate-700 dark:text-slate-200 font-sans leading-relaxed">
+                      <div className="font-bold text-blue-600 dark:text-blue-400 text-[11px] mb-2 font-mono uppercase tracking-widest">[{log.node}]</div>
+                      <div className="space-y-3 text-wrap break-words">{renderFormattedMessage(log.output)}</div>
                     </div>
                   ))}
                 </div>
@@ -460,8 +462,8 @@ export default function WorkflowsTab({ selectedModel = '', customProviders = [] 
 
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Final Synthesized Output</h4>
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-sm font-semibold text-emerald-900 dark:text-emerald-300 whitespace-pre-wrap">
-                  {resultModal.finalOutput}
+                <div className="p-5 bg-[#f0fdf4]/50 dark:bg-[#064e3b]/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-[13.5px] text-emerald-950 dark:text-emerald-100 font-sans leading-relaxed shadow-sm">
+                  <div className="space-y-3 text-wrap break-words">{renderFormattedMessage(resultModal.finalOutput)}</div>
                 </div>
               </div>
             </div>
