@@ -13,6 +13,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
   const [baseUrl, setBaseUrl] = useState('https://api.openai.com/v1');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [supportsImages, setSupportsImages] = useState(false);
   const [contextWindow, setContextWindow] = useState(128000);
   const [temperature, setTemperature] = useState(0.2);
@@ -43,6 +44,16 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
         }
         throw new Error(errorMsg);
       }
+      
+      const resData = await res.json();
+      if (resData && resData.data && Array.isArray(resData.data)) {
+        const models = resData.data.map((m: any) => m.id);
+        setAvailableModels(models);
+        if (models.length > 0 && !model) {
+          setModel(models[0]);
+        }
+      }
+
       setTestStatus('success');
     } catch (err: any) {
       setTestStatus('error');
@@ -142,13 +153,23 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Model *</label>
-            <input
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="e.g., gpt-4o, my-custom-model"
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
-            />
+            {availableModels.length > 0 ? (
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+              >
+                {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g., gpt-4o, my-custom-model"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+              />
+            )}
           </div>
 
           <div className="border-t border-slate-100 dark:border-white/[0.04] pt-6 space-y-4">
