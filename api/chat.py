@@ -32,6 +32,17 @@ class ChatRequest(BaseModel):
     history: Optional[List[ChatMessage]] = []
     attachedFiles: Optional[List[AttachedFile]] = []
 
+class ProxyTestRequest(BaseModel):
+    baseUrl: str
+    apiKey: str
+
+class ProxyChatRequest(BaseModel):
+    baseUrl: str
+    apiKey: str
+    model: str
+    messages: List[Dict[str, Any]]
+    temperature: float = 0.2
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "message": "NeuraRAG Python Backend is running!"}
@@ -119,6 +130,66 @@ def chat(req: ChatRequest):
     except Exception as e:
         return {
             "text": f"An error occurred in the Python backend: {str(e)}",
+            "thought": "Execution failed.",
+            "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
+            "sources": [],
+            "timeline": []
+        }
+
+@app.post("/api/proxy/test")
+def proxy_test(req: ProxyTestRequest):
+    try:
+        base_url = req.baseUrl.rstrip('/')
+        url = f"{base_url}/models"
+        req_obj = urllib.request.Request(url, headers={'Authorization': f'Bearer {req.apiKey}'}, method='GET')
+        with urllib.request.urlopen(req_obj) as response:
+            return {"status": "success"}
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode('utf-8')
+        return {"status": "error", "message": f"HTTP {e.code}: {err_msg}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/proxy/chat")
+def proxy_chat(req: ProxyChatRequest):
+    try:
+        base_url = req.baseUrl.rstrip('/')
+        url = f"{base_url}/chat/completions"
+        payload = {
+            "model": req.model,
+            "messages": req.messages,
+            "temperature": req.temperature
+        }
+        data = json.dumps(payload).encode('utf-8')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {req.apiKey}'
+        }
+        req_obj = urllib.request.Request(url, data=data, headers=headers, method='POST')
+        
+        with urllib.request.urlopen(req_obj) as response:
+            res_json = json.loads(response.read())
+            reply_text = res_json.get('choices', [{}])[0].get('message', {}).get('content', "No response content.")
+            usage = res_json.get('usage', {})
+            return {
+                "text": reply_text,
+                "thought": f"Processed successfully by custom backend proxy.",
+                "tokensUsed": {"prompt": usage.get('prompt_tokens', 0), "completion": usage.get('completion_tokens', 0), "cost": 0},
+                "sources": [],
+                "timeline": []
+            }
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode('utf-8')
+        return {
+            "text": f"### Proxy API Error\n\nThe custom provider returned an error.\n\n**Error {e.code}**: {e.reason}\n\n```json\n{err_msg}\n```",
+            "thought": "Execution failed due to API error.",
+            "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
+            "sources": [],
+            "timeline": []
+        }
+    except Exception as e:
+        return {
+            "text": f"An error occurred while proxying: {str(e)}",
             "thought": "Execution failed.",
             "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
             "sources": [],

@@ -24,14 +24,14 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
     setTestStatus('testing');
     setTestError('');
     try {
-      // Basic test for OpenAI compatible endpoints: hitting /models
-      const res = await fetch(`${baseUrl}/models`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`
-        }
+      const res = await fetch(`/api/proxy/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ baseUrl, apiKey })
       });
-      if (!res.ok) {
-        throw new Error(`Status ${res.status}: ${res.statusText}`);
+      const data = await res.json();
+      if (!res.ok || data.status === 'error') {
+        throw new Error(data.message || `Status ${res.status}: ${res.statusText}`);
       }
       setTestStatus('success');
     } catch (err: any) {

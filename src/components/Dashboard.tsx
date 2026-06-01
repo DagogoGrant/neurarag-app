@@ -249,7 +249,6 @@ export default function Dashboard({ session }: { session: Session }) {
         }
       } else if (customProviders.some(p => p.id === selectedModel)) {
         const provider = customProviders.find(p => p.id === selectedModel)!;
-        const endpoint = provider.baseUrl.endsWith('/') ? `${provider.baseUrl}chat/completions` : `${provider.baseUrl}/chat/completions`;
         
         const openAiMessages = [
           { role: "system", content: "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown." },
@@ -257,13 +256,12 @@ export default function Dashboard({ session }: { session: Session }) {
           { role: "user", content: finalMessageText }
         ];
 
-        const res = await fetch(endpoint, {
+        const res = await fetch('/api/proxy/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${provider.apiKey}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            baseUrl: provider.baseUrl,
+            apiKey: provider.apiKey,
             model: provider.model,
             messages: openAiMessages,
             temperature: provider.temperature
@@ -271,20 +269,10 @@ export default function Dashboard({ session }: { session: Session }) {
         });
 
         if (!res.ok) {
-          const errorBody = await res.text();
-          throw new Error(`${provider.name} API Error: ${res.status} ${res.statusText} - ${errorBody}`);
+          throw new Error(`Proxy Error: ${res.status}`);
         }
 
-        const resJson = await res.json();
-        const replyText = resJson.choices?.[0]?.message?.content || "Received empty response from Custom Provider.";
-        
-        responseData = {
-          text: replyText,
-          thought: `Processed successfully by ${provider.name} (${provider.model}) via DIRECT BROWSER REST pipeline.`,
-          tokensUsed: { prompt: resJson.usage?.prompt_tokens || 0, completion: resJson.usage?.completion_tokens || 0, cost: 0 },
-          sources: [],
-          timeline: []
-        };
+        responseData = await res.json();
       } else if (selectedModel.startsWith('gemini')) {
         // BYPASS VERCEL 4.5MB LIMIT: Directly fetch Gemini from the browser for large PDF support!
         if (!geminiApiKey) {
