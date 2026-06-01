@@ -19,7 +19,7 @@ import {
   User,
   LogOut
 } from 'lucide-react';
-import { Theme, TimelineEvent } from '../types';
+import { Theme, TimelineEvent, CustomProvider } from '../types';
 
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -34,6 +34,8 @@ interface NavbarProps {
   timelineEvents: TimelineEvent[];
   onClearNotifications: () => void;
   session?: Session;
+  customProviders: CustomProvider[];
+  onOpenProviderModal: () => void;
 }
 
 export default function Navbar({
@@ -45,7 +47,9 @@ export default function Navbar({
   onTriggerCommandPalette,
   timelineEvents,
   onClearNotifications,
-  session
+  session,
+  customProviders,
+  onOpenProviderModal
 }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -56,7 +60,15 @@ export default function Navbar({
     { id: 'openai-gpt-4o', label: 'OpenAI GPT-4o', desc: 'OpenAI flagship reasoning model' },
     { id: 'openai-gpt-4o-mini', label: 'OpenAI GPT-4o-mini', desc: 'OpenAI fast lightweight reasoning' },
     { id: 'neurarag-simulation', label: 'NeuraRAG Simulation', desc: 'Mock pipeline response logs' },
-    { id: 'ollama-local', label: 'Ollama: Local Node', desc: 'Run locally via Ollama endpoint' }
+  ];
+
+  const allModels = [
+    ...models,
+    ...customProviders.map(p => ({
+      id: p.id,
+      label: p.name,
+      desc: `${p.type} model: ${p.model}`
+    }))
   ];
 
   return (
@@ -98,14 +110,14 @@ export default function Navbar({
               onChange={(e) => setSelectedModel(e.target.value)}
               className="text-[11px] font-sans font-bold py-0.5 pl-0 pr-6 rounded-lg appearance-none bg-transparent focus:outline-none cursor-pointer transition-all text-blue-600 dark:text-indigo-400"
             >
-              {models.map((m) => (
+              {allModels.map((m) => (
                 <option key={m.id} value={m.id} className="bg-white dark:bg-[#121319] text-slate-800 dark:text-slate-200" title={m.desc}>
                   {m.label}
                 </option>
               ))}
             </select>
             <ChevronDown className="w-3 h-3 text-slate-400 absolute right-8 pointer-events-none" />
-            <button className="p-0.5 hover:bg-slate-200/50 dark:hover:bg-white/[0.04] rounded-lg transition-colors ml-1" title="Model settings">
+            <button onClick={onOpenProviderModal} className="p-0.5 hover:bg-slate-200/50 dark:hover:bg-white/[0.04] rounded-lg transition-colors ml-1" title="Configure New Provider">
               <Settings className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
             </button>
           </div>

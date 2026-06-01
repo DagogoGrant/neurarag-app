@@ -80,3 +80,15 @@ export interface WorkspaceState {
   selectedModel: string;
   memoryTags: string[];
 }
+
+export interface CustomProvider {
+  id: string;
+  type: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  supportsImages: boolean;
+  contextWindow: number;
+  temperature: number;
+}

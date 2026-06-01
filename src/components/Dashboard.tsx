@@ -27,7 +27,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-import { Theme, Conversation, Message, Source, AgentState, TimelineEvent, GroundingNode, GroundingEdge } from '../types';
+import { Theme, Conversation, Message, Source, AgentState, TimelineEvent, GroundingNode, GroundingEdge, CustomProvider } from '../types';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import AgentFlow from './AgentFlow';
@@ -37,6 +37,7 @@ import KnowledgeTab from './KnowledgeTab';
 import WorkflowsTab from './WorkflowsTab';
 import AnalyticsTab from './AnalyticsTab';
 import SettingsTab from './SettingsTab';
+import ProviderModal from './ProviderModal';
 
 import { Session } from '@supabase/supabase-js';
 
@@ -51,6 +52,15 @@ export default function Dashboard({ session }: { session: Session }) {
   const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('openai_api_key') || '');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
+
+  const [customProviders, setCustomProviders] = useState<CustomProvider[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('custom_providers') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [showProviderModal, setShowProviderModal] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('selected_model', selectedModel);
@@ -67,6 +77,9 @@ export default function Dashboard({ session }: { session: Session }) {
   useEffect(() => {
     localStorage.setItem('openai_api_key', openaiApiKey);
   }, [openaiApiKey]);
+  useEffect(() => {
+    localStorage.setItem('custom_providers', JSON.stringify(customProviders));
+  }, [customProviders]);
 
   // Recall memory labels
   const [memoryTags, setMemoryTags] = useState<string[]>([
@@ -234,6 +247,44 @@ export default function Dashboard({ session }: { session: Session }) {
             timeline: []
           };
         }
+      } else if (customProviders.some(p => p.id === selectedModel)) {
+        const provider = customProviders.find(p => p.id === selectedModel)!;
+        const endpoint = provider.baseUrl.endsWith('/') ? `${provider.baseUrl}chat/completions` : `${provider.baseUrl}/chat/completions`;
+        
+        const openAiMessages = [
+          { role: "system", content: "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown." },
+          ...chatHistory,
+          { role: "user", content: finalMessageText }
+        ];
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${provider.apiKey}`
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            messages: openAiMessages,
+            temperature: provider.temperature
+          })
+        });
+
+        if (!res.ok) {
+          const errorBody = await res.text();
+          throw new Error(`${provider.name} API Error: ${res.status} ${res.statusText} - ${errorBody}`);
+        }
+
+        const resJson = await res.json();
+        const replyText = resJson.choices?.[0]?.message?.content || "Received empty response from Custom Provider.";
+        
+        responseData = {
+          text: replyText,
+          thought: `Processed successfully by ${provider.name} (${provider.model}) via DIRECT BROWSER REST pipeline.`,
+          tokensUsed: { prompt: resJson.usage?.prompt_tokens || 0, completion: resJson.usage?.completion_tokens || 0, cost: 0 },
+          sources: [],
+          timeline: []
+        };
       } else if (selectedModel.startsWith('gemini')) {
         // BYPASS VERCEL 4.5MB LIMIT: Directly fetch Gemini from the browser for large PDF support!
         if (!geminiApiKey) {
@@ -442,6 +493,8 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
             timelineEvents={timelineEvents}
             onClearNotifications={() => setTimelineEvents([])}
             session={session}
+            customProviders={customProviders}
+            onOpenProviderModal={() => setShowProviderModal(true)}
           />
 
           {/* Dynamic Tab Panel switches */}
@@ -586,6 +639,17 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
       <div className="flex-1 overflow-hidden relative">
         {renderAppMainWorkspace(false)}
       </div>
+
+      {showProviderModal && (
+        <ProviderModal
+          onClose={() => setShowProviderModal(false)}
+          onSave={(provider) => {
+            setCustomProviders(prev => [...prev, provider]);
+            setSelectedModel(provider.id);
+            setShowProviderModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
