@@ -141,7 +141,11 @@ def proxy_test(req: ProxyTestRequest):
     try:
         base_url = req.baseUrl.rstrip('/')
         url = f"{base_url}/models"
-        req_obj = urllib.request.Request(url, headers={'Authorization': f'Bearer {req.apiKey}'}, method='GET')
+        req_obj = urllib.request.Request(url, headers={
+            'Authorization': f'Bearer {req.apiKey}',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+        }, method='GET')
         with urllib.request.urlopen(req_obj) as response:
             return {"status": "success"}
     except urllib.error.HTTPError as e:
@@ -163,7 +167,9 @@ def proxy_chat(req: ProxyChatRequest):
         data = json.dumps(payload).encode('utf-8')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {req.apiKey}'
+            'Authorization': f'Bearer {req.apiKey}',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
         }
         req_obj = urllib.request.Request(url, data=data, headers=headers, method='POST')
         
