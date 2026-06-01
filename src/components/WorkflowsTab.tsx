@@ -198,7 +198,7 @@ export default function WorkflowsTab({ selectedModel = '', customProviders = [] 
 
             if (!res.ok) throw new Error("API Error");
             const data = await res.json();
-            nodeOutput = data.choices[0].message.content;
+            nodeOutput = data.text || "No response received.";
           } else {
             // Simulated execution for Gemini or Ollama if provider API is not selected
             nodeOutput = `[Simulated Output for ${node.data.label}] Node processed the data successfully based on its function: "${node.data.desc}". Input was: "${currentContext.substring(0, 30)}..."`;
