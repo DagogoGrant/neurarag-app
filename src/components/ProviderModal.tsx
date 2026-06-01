@@ -7,8 +7,18 @@ interface ProviderModalProps {
   onSave: (provider: CustomProvider) => void;
 }
 
+const PROVIDER_URLS: Record<string, string> = {
+  'Custom OpenAI Compatible': '',
+  'OpenAI': 'https://api.openai.com/v1',
+  'Groq': 'https://api.groq.com/openai/v1',
+  'Together AI': 'https://api.together.xyz/v1',
+  'OpenRouter': 'https://openrouter.ai/api/v1',
+  'Mistral': 'https://api.mistral.ai/v1',
+  'Perplexity': 'https://api.perplexity.ai'
+};
+
 export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
-  const [type, setType] = useState('OpenAI');
+  const [type, setType] = useState('Custom OpenAI Compatible');
   const [name, setName] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -107,12 +117,20 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
               <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Provider Type *</label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  setType(newType);
+                  if (PROVIDER_URLS[newType] !== undefined) {
+                    setBaseUrl(PROVIDER_URLS[newType]);
+                  }
+                }}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
               >
-                <option value="OpenAI">OpenAI</option>
-                <option value="Anthropic">Anthropic</option>
-                <option value="Custom">Custom OpenAI Compatible</option>
+                {Object.keys(PROVIDER_URLS).map(provider => (
+                  <option key={provider} value={provider}>{provider}</option>
+                ))}
+                <option value="Anthropic (Coming Soon)" disabled>Anthropic (Coming Soon)</option>
+                <option value="Google Vertex (Coming Soon)" disabled>Google Vertex (Coming Soon)</option>
               </select>
             </div>
             <div className="space-y-2">
