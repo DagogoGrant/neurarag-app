@@ -62,7 +62,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
   };
 
   const handleSave = () => {
-    if (!name || !baseUrl || !apiKey || !model) return;
+    if (!name || !baseUrl || !model) return;
     
     const provider: CustomProvider = {
       id: `custom-${Date.now()}`,
@@ -78,7 +78,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
     onSave(provider);
   };
 
-  const isFormValid = name && baseUrl && apiKey && model;
+  const isFormValid = name && baseUrl && model;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -135,12 +135,12 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Key *</label>
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Key</label>
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your API key"
+              placeholder="Enter your API key (optional)"
               className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -228,7 +228,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
           </button>
           <button
             onClick={handleTest}
-            disabled={!baseUrl || !apiKey || testStatus === 'testing'}
+            disabled={!baseUrl || testStatus === 'testing'}
             className="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#1a1b23] border border-slate-200 dark:border-white/[0.1] rounded-xl hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Test
