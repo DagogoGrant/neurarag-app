@@ -38,6 +38,7 @@ import WorkflowsTab from './WorkflowsTab';
 import AnalyticsTab from './AnalyticsTab';
 import SettingsTab from './SettingsTab';
 import ProviderModal from './ProviderModal';
+import { extractTextFromPdf } from '../utils/pdfParser';
 
 import { Session } from '@supabase/supabase-js';
 
@@ -250,10 +251,31 @@ export default function Dashboard({ session }: { session: Session }) {
       } else if (customProviders.some(p => p.id === selectedModel)) {
         const provider = customProviders.find(p => p.id === selectedModel)!;
         
+        let finalPrompt = finalMessageText;
+        
+        // If there are files (like PDFs), extract their text for custom providers
+        if (files && files.length > 0) {
+          let extractedText = "";
+          for (const file of files) {
+            if (file.type === 'application/pdf') {
+              try {
+                const text = await extractTextFromPdf(file);
+                extractedText += `\n\n--- Start of ${file.name} ---\n${text}\n--- End of ${file.name} ---`;
+              } catch (e) {
+                console.error("Failed to extract PDF text", e);
+                extractedText += `\n\n[Failed to read contents of ${file.name}]`;
+              }
+            } else {
+              extractedText += `\n\n[Attached file ${file.name} is not a PDF and cannot be read by this text model]`;
+            }
+          }
+          finalPrompt += extractedText;
+        }
+        
         const openAiMessages = [
           { role: "system", content: "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown." },
           ...chatHistory,
-          { role: "user", content: finalMessageText }
+          { role: "user", content: finalPrompt }
         ];
 
         const res = await fetch('/api/proxy/chat', {
