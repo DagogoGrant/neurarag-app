@@ -108,7 +108,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
               >
                 <option value="OpenAI">OpenAI</option>
                 <option value="Anthropic">Anthropic</option>
@@ -122,7 +122,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Work OpenAI"
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://api.openai.com/v1"
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
             />
           </div>
 
@@ -145,11 +145,11 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Enter your API key (optional)"
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
               Your API key is encrypted and stored locally. 
-              <a href="#" className="text-orange-500 hover:text-orange-600 flex items-center gap-1 ml-1">
+              <a href="#" className="text-blue-500 hover:text-blue-600 flex items-center gap-1 ml-1">
                 <ExternalLink className="w-3 h-3" /> OpenAI setup guide
               </a>
             </p>
@@ -161,7 +161,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
               >
                 {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -171,7 +171,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g., gpt-4o, my-custom-model"
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
               />
             )}
           </div>
@@ -184,7 +184,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
                 type="checkbox"
                 checked={supportsImages}
                 onChange={(e) => setSupportsImages(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-500"
               />
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Supports Images</span>
             </label>
@@ -196,7 +196,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
                   type="number"
                   value={contextWindow}
                   onChange={(e) => setContextWindow(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">Auto-filled based on model</p>
               </div>
@@ -209,7 +209,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
                   step="0.1"
                   value={temperature}
                   onChange={(e) => setTemperature(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-slate-200"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/[0.1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-slate-200"
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">Controls response randomness</p>
               </div>
@@ -240,7 +240,7 @@ export default function ProviderModal({ onClose, onSave }: ProviderModalProps) {
           <button
             onClick={handleSave}
             disabled={!isFormValid}
-            className="px-6 py-2.5 text-sm font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-orange-500/20"
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-500/20"
           >
             Save
           </button>
