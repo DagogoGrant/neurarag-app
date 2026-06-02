@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, Suspense, lazy } from 'react';
 import { Network, Database, Layers, Compass, HelpCircle } from 'lucide-react';
 import { GroundingNode, GroundingEdge } from '../types';
-import ForceGraph3D from 'react-force-graph-3d';
+
+const ForceGraph3D = lazy(() => import('react-force-graph-3d'));
 
 interface KnowledgeGraphProps {
   graphData?: { nodes: GroundingNode[]; edges: GroundingEdge[] };
@@ -88,26 +89,28 @@ export default function KnowledgeGraph({ graphData }: KnowledgeGraphProps) {
         ref={containerRef}
         className="relative flex-1 bg-[#faf8f5]/60 border border-slate-200/25 rounded-xl overflow-hidden dark:bg-[#08090d]/85 dark:border-white/[0.02] min-h-[220px] cursor-grab active:cursor-grabbing shadow-inner"
       >
-        <ForceGraph3D
-          ref={fgRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          graphData={gData}
-          nodeLabel={(node: any) => `<div style="background: rgba(10, 15, 30, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 6px; color: white; font-family: monospace; font-size: 11px;">
-            <span style="font-weight: bold; color: ${getNodeColor(node.type)}">${node.type.toUpperCase()}</span><br/>
-            ${node.label}<br/>
-            <span style="color: #94a3b8; font-size: 9px;">Weight: ${(node.val * 3.1).toFixed(1)} df</span>
-          </div>`}
-          nodeColor={(node: any) => getNodeColor(node.type)}
-          nodeVal={(node: any) => node.val || 2}
-          linkColor={() => 'rgba(148, 163, 184, 0.25)'}
-          linkWidth={1}
-          linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={1.5}
-          linkDirectionalParticleSpeed={0.005}
-          backgroundColor="rgba(0,0,0,0)" // Transparent to show parent div background
-          showNavInfo={false}
-        />
+        <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-[10px] font-mono animate-pulse">Initializing 3D Engine...</div>}>
+          <ForceGraph3D
+            ref={fgRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            graphData={gData}
+            nodeLabel={(node: any) => `<div style="background: rgba(10, 15, 30, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 6px; color: white; font-family: monospace; font-size: 11px;">
+              <span style="font-weight: bold; color: ${getNodeColor(node.type)}">${node.type ? node.type.toUpperCase() : 'NODE'}</span><br/>
+              ${node.label || 'Unknown'}<br/>
+              <span style="color: #94a3b8; font-size: 9px;">Weight: ${((node.val || 2) * 3.1).toFixed(1)} df</span>
+            </div>`}
+            nodeColor={(node: any) => getNodeColor(node.type)}
+            nodeVal={(node: any) => node.val || 2}
+            linkColor={() => 'rgba(148, 163, 184, 0.25)'}
+            linkWidth={1}
+            linkDirectionalParticles={2}
+            linkDirectionalParticleWidth={1.5}
+            linkDirectionalParticleSpeed={0.005}
+            backgroundColor="rgba(0,0,0,0)" // Transparent to show parent div background
+            showNavInfo={false}
+          />
+        </Suspense>
         
         {/* Overlay instruction */}
         <div className="absolute top-2 right-2 flex items-center gap-1.5 text-[9px] font-mono font-medium text-slate-400 dark:text-slate-500 pointer-events-none opacity-60">
