@@ -19,10 +19,12 @@ export default function KnowledgeGraph({ graphData }: KnowledgeGraphProps) {
 
     const resizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
-        setDimensions({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height
-        });
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height
+          });
+        }
       }
     });
 
@@ -34,7 +36,7 @@ export default function KnowledgeGraph({ graphData }: KnowledgeGraphProps) {
   const gData = useMemo(() => {
     if (graphData && graphData.nodes.length > 0) return graphData;
 
-    const N = 50;
+    const N = 40;
     const types: GroundingNode['type'][] = ['agent', 'document', 'vector', 'entity'];
     const nodes: GroundingNode[] = Array.from({ length: N }).map((_, i) => ({
       id: `idle_${i}`,
@@ -54,23 +56,6 @@ export default function KnowledgeGraph({ graphData }: KnowledgeGraphProps) {
 
     return { nodes, edges };
   }, [graphData]);
-
-  // Initial camera spin animation
-  useEffect(() => {
-    if (fgRef.current) {
-      // Set initial camera distance and start rotating
-      fgRef.current.cameraPosition({ z: 300 });
-      let angle = 0;
-      const interval = setInterval(() => {
-        angle += Math.PI / 600;
-        fgRef.current.cameraPosition({
-          x: 300 * Math.sin(angle),
-          z: 300 * Math.cos(angle)
-        });
-      }, 30);
-      return () => clearInterval(interval);
-    }
-  }, []);
 
   const getNodeColor = (type: GroundingNode['type']) => {
     switch (type) {
