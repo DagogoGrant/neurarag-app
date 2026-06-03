@@ -29,7 +29,8 @@ interface NavbarProps {
   setTheme: (theme: Theme) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
-  onSearch: (searchTerm: string) => void;
+  onSearch?: (searchTerm: string) => void;
+  onSearchSubmit?: (searchTerm: string) => void;
   onTriggerCommandPalette?: () => void;
   timelineEvents: TimelineEvent[];
   onClearNotifications: () => void;
@@ -44,6 +45,7 @@ export default function Navbar({
   selectedModel,
   setSelectedModel,
   onSearch,
+  onSearchSubmit,
   onTriggerCommandPalette,
   timelineEvents,
   onClearNotifications,
@@ -83,7 +85,14 @@ export default function Navbar({
           <input
             type="text"
             placeholder="Search documents, entities, previous prompts..."
-            onChange={(e) => onSearch(e.target.value)}
+            onChange={(e) => onSearch && onSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                e.preventDefault();
+                if (onSearchSubmit) onSearchSubmit(e.currentTarget.value);
+                e.currentTarget.value = '';
+              }
+            }}
             className="w-full text-xs font-semibold pl-9 pr-12 py-2 rounded-xl border focus:outline-none transition-all duration-200
               bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-slate-350 focus:ring-4 focus:ring-slate-100/30
               dark:bg-white/[0.03] dark:border-transparent dark:text-slate-100 dark:placeholder-slate-500 focus:dark:bg-[#111218]/90 focus:dark:border-indigo-505/30 focus:dark:ring-4 focus:dark:ring-indigo-500/5"

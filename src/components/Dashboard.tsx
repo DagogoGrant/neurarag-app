@@ -534,6 +534,7 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
             setTheme={setTheme} 
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
+            onSearchSubmit={handleSendMessage}
             timelineEvents={timelineEvents}
             onClearNotifications={() => setTimelineEvents([])}
             session={session}
