@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from duckduckgo_search import DDGS
+import logging
 
 app = FastAPI()
 
@@ -92,31 +92,49 @@ def chat(req: ChatRequest):
         web_timeline = []
         if req.webSearchEnabled:
             try:
-                with DDGS() as ddgs:
-                    results = list(ddgs.text(req.message, max_results=3))
+                # Use pure urllib Wikipedia API to prevent Vercel compilation crashes
+                query = urllib.parse.quote(req.message)
+                wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&utf8=&format=json&srlimit=3"
+                
+                req_obj = urllib.request.Request(wiki_url, headers={'User-Agent': 'NeuraRAG/1.0'})
+                with urllib.request.urlopen(req_obj) as response:
+                    res_json = json.loads(response.read())
+                    results = res_json.get('query', {}).get('search', [])
+                    
                     if results:
-                        context_str = "Live Web Context:\n"
+                        context_str = "Live Web Context (Wikipedia):\n"
                         for i, r in enumerate(results):
-                            context_str += f"{i+1}. {r['title']} ({r['href']}): {r['body']}\n"
+                            # Remove HTML span tags from snippet
+                            clean_snippet = r['snippet'].replace('<span class="searchmatch">', '').replace('</span>', '').replace('&quot;', '"')
+                            context_str += f"{i+1}. {r['title']}: {clean_snippet}\n"
                             web_sources.append({
                                 "id": f"web-{i}",
                                 "title": r['title'],
                                 "type": "doc",
                                 "confidence": 0.95,
-                                "snippet": r['body']
+                                "snippet": clean_snippet
                             })
                         
                         web_timeline.append({
                             "id": f"web-ev-{len(web_timeline)}",
-                            "timestamp": "now", # Placeholder, frontend ignores this anyway if we don't strictly format it
+                            "timestamp": "now",
                             "agentId": "retriever",
                             "title": "Web Research Agent",
-                            "detail": f"Scraped {len(results)} live internet sources via DuckDuckGo.",
+                            "detail": f"Scraped {len(results)} encyclopedia articles.",
                             "status": "success"
                         })
                         
                         # Inject live context into user's latest message
                         contents[-1]["parts"].insert(0, {"text": context_str + "\n\nUser Query: "})
+                    else:
+                        web_timeline.append({
+                            "id": f"web-ev-none",
+                            "timestamp": "now",
+                            "agentId": "retriever",
+                            "title": "Web Research Agent",
+                            "detail": "No web results found for this query.",
+                            "status": "success"
+                        })
             except Exception as e:
                 web_timeline.append({
                     "id": f"web-ev-err",
