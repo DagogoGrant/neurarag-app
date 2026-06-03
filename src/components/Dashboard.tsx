@@ -104,6 +104,7 @@ export default function Dashboard({ session }: { session: Session }) {
   const [conversations, setConversations] = useState<Conversation[]>([defaultConversation]);
   const [activeConversationId, setActiveConversationId] = useState<string>('session-default');
   const [isSending, setIsSending] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
   // Align active conversation reference
   const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0];
@@ -391,7 +392,8 @@ export default function Dashboard({ session }: { session: Session }) {
             geminiApiKey: geminiApiKey,
             openaiApiKey: openaiApiKey,
             customContextFiles: customContextFiles,
-            attachedFiles: parsedFiles
+            attachedFiles: parsedFiles,
+            webSearchEnabled: webSearchEnabled
           })
         });
         responseData = await response.json();
@@ -553,6 +555,8 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
                       activeConversation={activeConversation}
                       onSendMessage={handleSendMessage}
                       isSending={isSending}
+                      webSearchEnabled={webSearchEnabled}
+                      setWebSearchEnabled={setWebSearchEnabled}
                       onSelectSuggestedPrompt={handleSelectSuggestedPrompt}
                       memoryTags={memoryTags}
                       onAddMemoryTag={handleAddMemoryTag}

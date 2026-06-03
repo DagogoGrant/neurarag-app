@@ -19,7 +19,8 @@ import {
   Tag,
   BookOpen,
   CornerDownRight,
-  Database
+  Database,
+  Globe
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Message, Conversation, Source, AgentState } from '../types';
@@ -32,6 +33,8 @@ interface WorkspaceTabProps {
   memoryTags: string[];
   onAddMemoryTag: (tag: string) => void;
   onRemoveMemoryTag: (tag: string) => void;
+  webSearchEnabled: boolean;
+  setWebSearchEnabled: (val: boolean) => void;
 }
 
 function parseBoldStyles(text: string): React.ReactNode[] {
@@ -356,7 +359,9 @@ export default function WorkspaceTab({
   onSelectSuggestedPrompt,
   memoryTags,
   onAddMemoryTag,
-  onRemoveMemoryTag
+  onRemoveMemoryTag,
+  webSearchEnabled,
+  setWebSearchEnabled
 }: WorkspaceTabProps) {
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -735,6 +740,20 @@ export default function WorkspaceTab({
                 title="Voice parameters prompt"
               >
                 <Mic className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+                className={`p-2 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-medium ${
+                  webSearchEnabled 
+                  ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
+                  : 'hover:bg-slate-100 text-slate-450 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-200'
+                }`}
+                title="Toggle Web Research Agent"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="hidden md:inline">Web Search</span>
               </button>
 
               <button

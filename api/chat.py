@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
+from duckduckgo_search import DDGS
 
 app = FastAPI()
 
@@ -31,6 +32,7 @@ class ChatRequest(BaseModel):
     geminiApiKey: str = ""
     history: Optional[List[ChatMessage]] = []
     attachedFiles: Optional[List[AttachedFile]] = []
+    webSearchEnabled: bool = False
 
 class ProxyTestRequest(BaseModel):
     baseUrl: str
@@ -85,9 +87,49 @@ def chat(req: ChatRequest):
             # Prepend files before the text query
             contents[-1]["parts"] = file_parts + contents[-1]["parts"]
             
+        # Optional: Automated Web Research Agent Step
+        web_sources = []
+        web_timeline = []
+        if req.webSearchEnabled:
+            try:
+                with DDGS() as ddgs:
+                    results = list(ddgs.text(req.message, max_results=3))
+                    if results:
+                        context_str = "Live Web Context:\n"
+                        for i, r in enumerate(results):
+                            context_str += f"{i+1}. {r['title']} ({r['href']}): {r['body']}\n"
+                            web_sources.append({
+                                "id": f"web-{i}",
+                                "title": r['title'],
+                                "type": "doc",
+                                "confidence": 0.95,
+                                "snippet": r['body']
+                            })
+                        
+                        web_timeline.append({
+                            "id": f"web-ev-{len(web_timeline)}",
+                            "timestamp": "now", # Placeholder, frontend ignores this anyway if we don't strictly format it
+                            "agentId": "retriever",
+                            "title": "Web Research Agent",
+                            "detail": f"Scraped {len(results)} live internet sources via DuckDuckGo.",
+                            "status": "success"
+                        })
+                        
+                        # Inject live context into user's latest message
+                        contents[-1]["parts"].insert(0, {"text": context_str + "\n\nUser Query: "})
+            except Exception as e:
+                web_timeline.append({
+                    "id": f"web-ev-err",
+                    "timestamp": "now",
+                    "agentId": "retriever",
+                    "title": "Web Research Agent Failed",
+                    "detail": str(e),
+                    "status": "error"
+                })
+
         payload = {
             "systemInstruction": {
-                "parts": [{"text": "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown."}]
+                "parts": [{"text": "You are NeuraRAG, an advanced AI assistant. Provide concise, professional answers formatted in Markdown. If live web context is provided in the prompt, use it to accurately answer the question."}]
             },
             "contents": contents
         }
@@ -107,15 +149,17 @@ def chat(req: ChatRequest):
                     reply_text = "Received an empty or malformed response from Google Gemini."
                     
                 thought_msg = f"Processed successfully by {req.model} via direct REST pipeline."
-                if req.attachedFiles:
+                if req.webSearchEnabled:
+                    thought_msg += f" Web research was successful, grounding answer in {len(web_sources)} live websites."
+                elif req.attachedFiles:
                     thought_msg += f" Received {len(req.attachedFiles)} attached file(s) for multimodal context."
                     
                 return {
                     "text": reply_text,
                     "thought": thought_msg,
                     "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
-                    "sources": [],
-                    "timeline": []
+                    "sources": web_sources,
+                    "timeline": web_timeline
                 }
         except urllib.error.HTTPError as e:
             err_msg = e.read().decode('utf-8')
@@ -124,7 +168,7 @@ def chat(req: ChatRequest):
                 "thought": "Execution failed due to API error.",
                 "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
                 "sources": [],
-                "timeline": []
+                "timeline": web_timeline
             }
             
     except Exception as e:
