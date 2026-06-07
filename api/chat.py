@@ -187,6 +187,20 @@ def chat(req: ChatRequest):
                         "planner": {"id": "planner", "status": "completed", "latency": 15},
                         "retriever": {"id": "retriever", "status": "completed", "latency": 85},
                         "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
+                    } if req.webSearchEnabled else None,
+                    "graph": {
+                        "nodes": [
+                            {"id": "n1", "name": "User Query", "type": "entity", "val": 20},
+                            {"id": "n2", "name": "Wikipedia Scraper", "type": "agent", "val": 25},
+                            {"id": "n3", "name": "Vector Context", "type": "vector", "val": 15},
+                            {"id": "n4", "name": "Document Parsing", "type": "document", "val": 18}
+                        ],
+                        "edges": [
+                            {"source": "n1", "target": "n2", "label": "triggers"},
+                            {"source": "n2", "target": "n4", "label": "extracts"},
+                            {"source": "n4", "target": "n3", "label": "embeds"},
+                            {"source": "n3", "target": "n1", "label": "answers"}
+                        ]
                     } if req.webSearchEnabled else None
                 }
         except urllib.error.HTTPError as e:
@@ -319,6 +333,20 @@ def proxy_chat(req: ProxyChatRequest):
                     "planner": {"id": "planner", "status": "completed", "latency": 15},
                     "retriever": {"id": "retriever", "status": "completed", "latency": 85},
                     "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
+                } if req.webSearchEnabled else None,
+                "graph": {
+                    "nodes": [
+                        {"id": "n1", "name": "User Query", "type": "entity", "val": 20},
+                        {"id": "n2", "name": "Wikipedia Scraper", "type": "agent", "val": 25},
+                        {"id": "n3", "name": "Vector Context", "type": "vector", "val": 15},
+                        {"id": "n4", "name": "Document Parsing", "type": "document", "val": 18}
+                    ],
+                    "edges": [
+                        {"source": "n1", "target": "n2", "label": "triggers"},
+                        {"source": "n2", "target": "n4", "label": "extracts"},
+                        {"source": "n4", "target": "n3", "label": "embeds"},
+                        {"source": "n3", "target": "n1", "label": "answers"}
+                    ]
                 } if req.webSearchEnabled else None
             }
     except urllib.error.HTTPError as e:
