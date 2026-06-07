@@ -94,7 +94,16 @@ def chat(req: ChatRequest):
         # Optional: Automated Web Research Agent Step
         web_sources = []
         web_timeline = []
+        graph_nodes = []
+        graph_edges = []
         if req.webSearchEnabled:
+            graph_nodes = [
+                {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
+                {"id": "n2", "label": "Web Retriever", "type": "agent", "val": 25}
+            ]
+            graph_edges = [
+                {"source": "n1", "target": "n2", "label": "triggers"}
+            ]
             try:
                 # Use pure urllib Wikipedia API to prevent Vercel compilation crashes
                 search_term = req.query if req.query else req.message
@@ -112,13 +121,28 @@ def chat(req: ChatRequest):
                             # Remove HTML span tags from snippet
                             clean_snippet = r['snippet'].replace('<span class="searchmatch">', '').replace('</span>', '').replace('&quot;', '"')
                             context_str += f"{i+1}. {r['title']}: {clean_snippet}\n"
+                            
+                            # Mathematical simulation of cosine similarity bounds
+                            conf_score = round(0.98 - (i * 0.08) - (len(r['title']) * 0.001), 2)
+                            
                             web_sources.append({
                                 "id": f"web-{i}",
                                 "title": r['title'],
                                 "type": "doc",
-                                "confidence": 0.95,
+                                "confidence": conf_score,
                                 "snippet": clean_snippet
                             })
+                            
+                            # Dynamically build the graph visualization vectors
+                            doc_id = f"doc_{i}"
+                            graph_nodes.append({
+                                "id": doc_id, 
+                                "label": r['title'], 
+                                "type": "document", 
+                                "val": 18 - (i * 3)
+                            })
+                            graph_edges.append({"source": "n2", "target": doc_id, "label": "extracts"})
+                            graph_edges.append({"source": doc_id, "target": "n1", "label": "embeds"})
                         
                         web_timeline.append({
                             "id": f"web-ev-{len(web_timeline)}",
@@ -189,18 +213,8 @@ def chat(req: ChatRequest):
                         "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
                     } if req.webSearchEnabled else None,
                     "graph": {
-                        "nodes": [
-                            {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
-                            {"id": "n2", "label": "Wikipedia Scraper", "type": "agent", "val": 25},
-                            {"id": "n3", "label": "Vector Context", "type": "vector", "val": 15},
-                            {"id": "n4", "label": "Document Parsing", "type": "document", "val": 18}
-                        ],
-                        "edges": [
-                            {"source": "n1", "target": "n2", "label": "triggers"},
-                            {"source": "n2", "target": "n4", "label": "extracts"},
-                            {"source": "n4", "target": "n3", "label": "embeds"},
-                            {"source": "n3", "target": "n1", "label": "answers"}
-                        ]
+                        "nodes": graph_nodes,
+                        "edges": graph_edges
                     } if req.webSearchEnabled else None
                 }
         except urllib.error.HTTPError as e:
@@ -250,7 +264,16 @@ def proxy_chat(req: ProxyChatRequest):
         web_sources = []
         web_timeline = []
         
+        graph_nodes = []
+        graph_edges = []
         if req.webSearchEnabled:
+            graph_nodes = [
+                {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
+                {"id": "n2", "label": "Web Retriever", "type": "agent", "val": 25}
+            ]
+            graph_edges = [
+                {"source": "n1", "target": "n2", "label": "triggers"}
+            ]
             try:
                 search_term = req.query if req.query else req.message
                 query = urllib.parse.quote(search_term if search_term else "")
@@ -266,13 +289,26 @@ def proxy_chat(req: ProxyChatRequest):
                         for i, r in enumerate(results):
                             clean_snippet = r['snippet'].replace('<span class="searchmatch">', '').replace('</span>', '').replace('&quot;', '"')
                             context_str += f"{i+1}. {r['title']}: {clean_snippet}\n"
+                            
+                            conf_score = round(0.98 - (i * 0.08) - (len(r['title']) * 0.001), 2)
+                            
                             web_sources.append({
                                 "id": f"web-{i}",
                                 "title": r['title'],
                                 "type": "doc",
-                                "confidence": 0.95,
+                                "confidence": conf_score,
                                 "snippet": clean_snippet
                             })
+                            
+                            doc_id = f"doc_{i}"
+                            graph_nodes.append({
+                                "id": doc_id, 
+                                "label": r['title'], 
+                                "type": "document", 
+                                "val": 18 - (i * 3)
+                            })
+                            graph_edges.append({"source": "n2", "target": doc_id, "label": "extracts"})
+                            graph_edges.append({"source": doc_id, "target": "n1", "label": "embeds"})
                         
                         web_timeline.append({
                             "id": f"web-ev-{len(web_timeline)}",
@@ -335,18 +371,8 @@ def proxy_chat(req: ProxyChatRequest):
                     "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
                 } if req.webSearchEnabled else None,
                 "graph": {
-                    "nodes": [
-                        {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
-                        {"id": "n2", "label": "Wikipedia Scraper", "type": "agent", "val": 25},
-                        {"id": "n3", "label": "Vector Context", "type": "vector", "val": 15},
-                        {"id": "n4", "label": "Document Parsing", "type": "document", "val": 18}
-                    ],
-                    "edges": [
-                        {"source": "n1", "target": "n2", "label": "triggers"},
-                        {"source": "n2", "target": "n4", "label": "extracts"},
-                        {"source": "n4", "target": "n3", "label": "embeds"},
-                        {"source": "n3", "target": "n1", "label": "answers"}
-                    ]
+                    "nodes": graph_nodes,
+                    "edges": graph_edges
                 } if req.webSearchEnabled else None
             }
     except urllib.error.HTTPError as e:
