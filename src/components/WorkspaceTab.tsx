@@ -428,7 +428,7 @@ export default function WorkspaceTab({
 
   return (
     <div
-      className="flex flex-col h-full bg-transparent select-none relative"
+      className="flex flex-col h-full bg-transparent relative"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

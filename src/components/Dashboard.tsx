@@ -522,7 +522,7 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
     const isSidebarCollapsedLocal = isMobileForced ? true : sidebarCollapsed;
     
     return (
-      <div className={`h-full w-full flex overflow-hidden font-sans select-none
+      <div className={`h-full w-full flex overflow-hidden font-sans
         ${theme === 'dark' ? 'dark bg-[#121214] text-slate-100' : 'bg-[#f8fafc] text-slate-800'}`}>
         
         {/* 1. Collapsible Left Sidebar */}
@@ -694,7 +694,7 @@ We processed: "${text}" successfully inside our isolated client sandbox. Check l
   };
 
   return (
-    <div className={`h-screen w-screen flex flex-col font-sans select-none overflow-hidden
+    <div className={`h-screen w-screen flex flex-col font-sans overflow-hidden
       ${theme === 'dark' ? 'dark bg-[#121214]' : 'bg-[#f8fafc]'}`}>
       <div className="flex-1 overflow-hidden relative">
         {renderAppMainWorkspace(false)}
