@@ -376,8 +376,8 @@ export default function WorkspaceTab({
     "Compare Ada similarity indexing against Gemini embeddings dimension limits."
   ];
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (inputText.trim() || stagedFiles.length > 0) {
       onSendMessage(inputText, stagedFiles);
       setInputText('');
