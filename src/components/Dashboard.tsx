@@ -394,6 +394,7 @@ export default function Dashboard({ session }: { session: Session }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: backendPromptText,
+            query: finalMessageText,
             history: [...chatHistory, { role: 'user', text: backendPromptText }],
             model: selectedModel,
             ollamaUrl: ollamaUrl,

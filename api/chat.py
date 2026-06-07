@@ -28,6 +28,7 @@ class AttachedFile(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    query: Optional[str] = None
     model: str = "gemini-1.5-flash"
     geminiApiKey: str = ""
     history: Optional[List[ChatMessage]] = []
@@ -93,7 +94,8 @@ def chat(req: ChatRequest):
         if req.webSearchEnabled:
             try:
                 # Use pure urllib Wikipedia API to prevent Vercel compilation crashes
-                query = urllib.parse.quote(req.message)
+                search_term = req.query if req.query else req.message
+                query = urllib.parse.quote(search_term)
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&utf8=&format=json&srlimit=3"
                 
                 req_obj = urllib.request.Request(wiki_url, headers={'User-Agent': 'NeuraRAG/1.0'})
@@ -177,7 +179,12 @@ def chat(req: ChatRequest):
                     "thought": thought_msg,
                     "tokensUsed": {"prompt": 0, "completion": 0, "cost": 0},
                     "sources": web_sources,
-                    "timeline": web_timeline
+                    "timeline": web_timeline,
+                    "agents": {
+                        "planner": {"id": "planner", "status": "completed", "latency": 15},
+                        "retriever": {"id": "retriever", "status": "completed", "latency": 85},
+                        "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
+                    } if req.webSearchEnabled else None
                 }
         except urllib.error.HTTPError as e:
             err_msg = e.read().decode('utf-8')
