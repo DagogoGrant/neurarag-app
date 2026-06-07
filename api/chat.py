@@ -190,10 +190,10 @@ def chat(req: ChatRequest):
                     } if req.webSearchEnabled else None,
                     "graph": {
                         "nodes": [
-                            {"id": "n1", "name": "User Query", "type": "entity", "val": 20},
-                            {"id": "n2", "name": "Wikipedia Scraper", "type": "agent", "val": 25},
-                            {"id": "n3", "name": "Vector Context", "type": "vector", "val": 15},
-                            {"id": "n4", "name": "Document Parsing", "type": "document", "val": 18}
+                            {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
+                            {"id": "n2", "label": "Wikipedia Scraper", "type": "agent", "val": 25},
+                            {"id": "n3", "label": "Vector Context", "type": "vector", "val": 15},
+                            {"id": "n4", "label": "Document Parsing", "type": "document", "val": 18}
                         ],
                         "edges": [
                             {"source": "n1", "target": "n2", "label": "triggers"},
@@ -336,10 +336,10 @@ def proxy_chat(req: ProxyChatRequest):
                 } if req.webSearchEnabled else None,
                 "graph": {
                     "nodes": [
-                        {"id": "n1", "name": "User Query", "type": "entity", "val": 20},
-                        {"id": "n2", "name": "Wikipedia Scraper", "type": "agent", "val": 25},
-                        {"id": "n3", "name": "Vector Context", "type": "vector", "val": 15},
-                        {"id": "n4", "name": "Document Parsing", "type": "document", "val": 18}
+                        {"id": "n1", "label": "User Query", "type": "entity", "val": 20},
+                        {"id": "n2", "label": "Wikipedia Scraper", "type": "agent", "val": 25},
+                        {"id": "n3", "label": "Vector Context", "type": "vector", "val": 15},
+                        {"id": "n4", "label": "Document Parsing", "type": "document", "val": 18}
                     ],
                     "edges": [
                         {"source": "n1", "target": "n2", "label": "triggers"},
