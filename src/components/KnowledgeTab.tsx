@@ -146,8 +146,10 @@ export default function KnowledgeTab() {
   const handleDeleteDoc = async (id: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/kb/documents/${id}`, {
-        method: "DELETE"
+      const res = await fetch(`/api/kb/documents`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
       });
       const data = await res.json();
       if (data.success) {
