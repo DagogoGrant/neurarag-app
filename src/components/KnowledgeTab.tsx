@@ -115,17 +115,15 @@ export default function KnowledgeTab() {
         })
       });
       const data = await res.json();
-        if (data.success) {
-          setDocs(prev => [data.document, ...prev]);
-        } else {
-          alert(`Upload failed: ${data.error || 'Unknown error'}`);
-        }
-      } finally {
-        setIsLoading(false);
+      if (data.success) {
+        setDocs(prev => [data.document, ...prev]);
+      } else {
+        alert(`Upload failed: ${data.error || 'Unknown error'}`);
       }
     } catch (err: any) {
       console.error(err);
       alert(`Upload request error: ${err.message || err}`);
+    } finally {
       setIsLoading(false);
     }
   };
