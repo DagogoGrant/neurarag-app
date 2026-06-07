@@ -151,7 +151,11 @@ export default function KnowledgeTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setDocs(prev => prev.filter(d => d.id !== id));
+        setDocs(prev => {
+          const newDocs = prev.filter(d => d.id !== id);
+          localStorage.setItem('neurarag_docs', JSON.stringify(newDocs));
+          return newDocs;
+        });
       }
     } catch (err) {
       console.error(err);
