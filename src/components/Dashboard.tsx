@@ -180,9 +180,18 @@ export default function Dashboard({ session }: { session: Session }) {
       }));
 
       let customContextFiles: string[] = [];
+      let backendPromptText = finalMessageText;
       try {
         const localDocs = JSON.parse(localStorage.getItem('neurarag_docs') || '[]');
         customContextFiles = localDocs.map((d: any) => d.name);
+        
+        if (localDocs.length > 0) {
+          backendPromptText += "\n\n--- KNOWLEDGE BASE CONTEXT ---\n";
+          localDocs.forEach((d: any) => {
+            if (d.text) backendPromptText += `[Document: ${d.name}]\n${d.text.substring(0, 5000)}\n\n`;
+          });
+          backendPromptText += "--- END KNOWLEDGE BASE CONTEXT ---\nPlease use the provided Knowledge Base Context to answer the user query.";
+        }
       } catch (e) {}
 
       let responseData: any = {};
@@ -208,7 +217,7 @@ export default function Dashboard({ session }: { session: Session }) {
         const activeOllamaUrl = (ollamaUrl || "http://localhost:11434").replace(/\/$/, "");
         const activeOllamaModel = ollamaModel || "llama3";
         
-        let finalPrompt = text;
+        let finalPrompt = backendPromptText;
         if (files && files.length > 0) {
           let extractedText = "";
           for (const file of files) {
@@ -272,7 +281,7 @@ export default function Dashboard({ session }: { session: Session }) {
       } else if (customProviders.some(p => p.id === selectedModel)) {
         const provider = customProviders.find(p => p.id === selectedModel)!;
         
-        let finalPrompt = finalMessageText;
+        let finalPrompt = backendPromptText;
         
         // If there are files (like PDFs), extract their text for custom providers
         if (files && files.length > 0) {
@@ -339,7 +348,7 @@ export default function Dashboard({ session }: { session: Session }) {
             timeline: []
           };
         } else {
-          const contents = [...chatHistory, { role: 'user', text: finalMessageText }].map(msg => ({
+          const contents = [...chatHistory, { role: 'user', text: backendPromptText }].map(msg => ({
             role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.text }]
           }));
@@ -384,8 +393,8 @@ export default function Dashboard({ session }: { session: Session }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: finalMessageText,
-            history: [...chatHistory, { role: 'user', text: finalMessageText }],
+            message: backendPromptText,
+            history: [...chatHistory, { role: 'user', text: backendPromptText }],
             model: selectedModel,
             ollamaUrl: ollamaUrl,
             ollamaModel: ollamaModel,
