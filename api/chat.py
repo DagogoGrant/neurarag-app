@@ -106,8 +106,15 @@ def chat(req: ChatRequest):
             ]
             try:
                 # Use pure urllib Wikipedia API to prevent Vercel compilation crashes
-                search_term = req.query if req.query else req.message
-                query = urllib.parse.quote(search_term)
+                search_term = ""
+                if req.history and req.history[-1].role == "user":
+                    search_term = req.history[-1].text.split("--- KNOWLEDGE BASE CONTEXT ---")[0].strip()
+                elif req.query:
+                    search_term = req.query
+                else:
+                    search_term = req.message
+                
+                query = urllib.parse.quote(search_term if search_term else "")
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&utf8=&format=json&srlimit=3"
                 
                 req_obj = urllib.request.Request(wiki_url, headers={'User-Agent': 'NeuraRAG/1.0'})
@@ -115,6 +122,17 @@ def chat(req: ChatRequest):
                     res_json = json.loads(response.read())
                     results = res_json.get('query', {}).get('search', [])
                     
+                    if results:
+                        filtered_results = []
+                        for r in results:
+                            query_words = set(search_term.lower().split())
+                            title_words = set(r['title'].lower().split())
+                            snippet_words = set(r['snippet'].lower().split())
+                            if query_words & title_words or query_words & snippet_words or len(query_words) < 2:
+                                filtered_results.append(r)
+                                
+                        results = filtered_results[:3]
+
                     if results:
                         context_str = "Live Web Context (Wikipedia):\n"
                         for i, r in enumerate(results):
@@ -195,6 +213,9 @@ def chat(req: ChatRequest):
                 except (KeyError, IndexError):
                     reply_text = "Received an empty or malformed response from Google Gemini."
                     
+                if req.webSearchEnabled and not web_sources:
+                    reply_text = "The retrieved context was not sufficiently relevant to your query. The Critic Agent has blocked this response to prevent hallucinations. Please try reformulating your query."
+                    
                 thought_msg = f"Processed successfully by {req.model} via direct REST pipeline."
                 if req.webSearchEnabled:
                     thought_msg += f" Web research was successful, grounding answer in {len(web_sources)} live websites."
@@ -210,6 +231,7 @@ def chat(req: ChatRequest):
                     "agents": {
                         "planner": {"id": "planner", "status": "completed", "latency": 15},
                         "retriever": {"id": "retriever", "status": "completed", "latency": 85},
+                        "critic": {"id": "critic", "status": "completed", "latency": 45},
                         "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
                     } if req.webSearchEnabled else None,
                     "graph": {
@@ -275,7 +297,14 @@ def proxy_chat(req: ProxyChatRequest):
                 {"source": "n1", "target": "n2", "label": "triggers"}
             ]
             try:
-                search_term = req.query if req.query else req.message
+                search_term = ""
+                if req.messages and req.messages[-1]["role"] == "user":
+                    search_term = req.messages[-1]["content"].split("--- KNOWLEDGE BASE CONTEXT ---")[0].strip()
+                elif req.query:
+                    search_term = req.query
+                else:
+                    search_term = req.message
+                
                 query = urllib.parse.quote(search_term if search_term else "")
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&utf8=&format=json&srlimit=3"
                 
@@ -284,6 +313,17 @@ def proxy_chat(req: ProxyChatRequest):
                     res_json = json.loads(response.read())
                     results = res_json.get('query', {}).get('search', [])
                     
+                    if results:
+                        filtered_results = []
+                        for r in results:
+                            query_words = set(search_term.lower().split())
+                            title_words = set(r['title'].lower().split())
+                            snippet_words = set(r['snippet'].lower().split())
+                            if query_words & title_words or query_words & snippet_words or len(query_words) < 2:
+                                filtered_results.append(r)
+                                
+                        results = filtered_results[:3]
+
                     if results:
                         context_str = "Live Web Context (Wikipedia):\n"
                         for i, r in enumerate(results):
@@ -359,6 +399,10 @@ def proxy_chat(req: ProxyChatRequest):
             res_json = json.loads(response.read())
             reply_text = res_json.get('choices', [{}])[0].get('message', {}).get('content', "No response content.")
             usage = res_json.get('usage', {})
+            
+            if req.webSearchEnabled and not web_sources:
+                reply_text = "The retrieved context was not sufficiently relevant to your query. The Critic Agent has blocked this response to prevent hallucinations. Please try reformulating your query."
+                
             return {
                 "text": reply_text,
                 "thought": f"Processed successfully by custom backend proxy.",
@@ -368,6 +412,7 @@ def proxy_chat(req: ProxyChatRequest):
                 "agents": {
                     "planner": {"id": "planner", "status": "completed", "latency": 15},
                     "retriever": {"id": "retriever", "status": "completed", "latency": 85},
+                    "critic": {"id": "critic", "status": "completed", "latency": 45},
                     "synthesizer": {"id": "synthesizer", "status": "completed", "latency": 120}
                 } if req.webSearchEnabled else None,
                 "graph": {
