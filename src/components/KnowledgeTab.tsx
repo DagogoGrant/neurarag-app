@@ -57,6 +57,16 @@ export default function KnowledgeTab() {
   };
 
   useEffect(() => {
+    const cachedDocs = localStorage.getItem('neurarag_docs');
+    if (cachedDocs) {
+      try {
+        const parsed = JSON.parse(cachedDocs);
+        if (parsed.length > 0) {
+          setDocs(parsed);
+          return;
+        }
+      } catch (e) {}
+    }
     fetchDocs();
   }, []);
 
