@@ -22,6 +22,7 @@ import {
   Trash2,
   HardDrive
 } from 'lucide-react';
+import { extractTextFromPdf } from '../utils/pdfParser';
 
 interface IngestedDocument {
   id: string;
@@ -77,14 +78,23 @@ export default function KnowledgeTab() {
     }
   }, [docs]);
 
-  const uploadFile = (file: File) => {
+  const uploadFile = async (file: File) => {
     const isPdf = file.name.toLowerCase().endsWith('.pdf');
-    const reader = new FileReader();
+    let fileData = "";
 
-    reader.onload = async (event) => {
-      let fileData = event.target?.result as string;
+    setIsLoading(true);
+
+    try {
       if (isPdf) {
-        fileData = fileData.split(',')[1];
+        // Extract real text from PDF in browser instead of sending base64!
+        fileData = await extractTextFromPdf(file);
+      } else {
+        fileData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
       }
 
       // TRUNCATE: Prevent Vercel 4.5MB Free Tier Serverless limit crashes
@@ -92,38 +102,31 @@ export default function KnowledgeTab() {
         fileData = fileData.substring(0, 1000000);
       }
 
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/kb/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: file.name,
-            size: `${(file.size / 1024).toFixed(1)} KB`,
-            text: fileData,
-            isBinary: isPdf,
-            chunkSize: chunkSize,
-            overlap: overlapVal
-          })
-        });
-        const data = await res.json();
+      const res = await fetch("/api/kb/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          text: fileData,
+          isBinary: false, // Force false so backend accepts the extracted text!
+          chunkSize: chunkSize,
+          overlap: overlapVal
+        })
+      });
+      const data = await res.json();
         if (data.success) {
           setDocs(prev => [data.document, ...prev]);
         } else {
           alert(`Upload failed: ${data.error || 'Unknown error'}`);
         }
-      } catch (err: any) {
-        console.error(err);
-        alert(`Upload request error: ${err.message || err}`);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    if (isPdf) {
-      reader.readAsDataURL(file);
-    } else {
-      reader.readAsText(file);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Upload request error: ${err.message || err}`);
+      setIsLoading(false);
     }
   };
 
