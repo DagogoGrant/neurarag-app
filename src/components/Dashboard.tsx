@@ -319,7 +319,10 @@ export default function Dashboard({ session }: { session: Session }) {
             apiKey: provider.apiKey,
             model: provider.model,
             messages: openAiMessages,
-            temperature: provider.temperature
+            temperature: provider.temperature,
+            webSearchEnabled: webSearchEnabled,
+            query: finalMessageText,
+            message: backendPromptText
           })
         });
 
