@@ -9,8 +9,8 @@ export interface IngestedDocument {
   chunks?: string[];
 }
 
-export function splitTextIntoChunks(text: string, chunkSize: number = 512, overlap: number = 128): string[] {
-  const words = text.split(/\s+/);
+export function splitTextSlidingWindow(text: string, chunkSize: number = 512, overlap: number = 128): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
   const chunks: string[] = [];
   let i = 0;
   while (i < words.length) {
@@ -20,6 +20,98 @@ export function splitTextIntoChunks(text: string, chunkSize: number = 512, overl
     if (chunkSize <= overlap) break;
   }
   return chunks;
+}
+
+export function splitTextRecursively(
+  text: string, 
+  chunkSize: number, 
+  overlap: number, 
+  separators: string[] = ["\n\n", "\n", ". ", " "]
+): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length <= chunkSize) {
+    return [trimmed];
+  }
+
+  let separator = "";
+  let parts: string[] = [];
+  for (const s of separators) {
+    const splitParts = trimmed.split(s);
+    if (splitParts.length > 1) {
+      separator = s;
+      parts = splitParts;
+      break;
+    }
+  }
+
+  if (!separator) {
+    return splitTextSlidingWindow(trimmed, chunkSize, overlap);
+  }
+
+  const chunks: string[] = [];
+  let currentChunk: string[] = [];
+  let currentChunkWordsCount = 0;
+
+  for (const part of parts) {
+    const cleanPart = part.trim();
+    if (!cleanPart) continue;
+    
+    const partWords = cleanPart.split(/\s+/).filter(Boolean);
+    const partWordsCount = partWords.length;
+
+    if (partWordsCount > chunkSize) {
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk.join(separator).trim());
+        currentChunk = [];
+        currentChunkWordsCount = 0;
+      }
+      const remainingSeparators = separators.slice(separators.indexOf(separator) + 1);
+      const subChunks = splitTextRecursively(cleanPart, chunkSize, overlap, remainingSeparators);
+      chunks.push(...subChunks);
+    } else {
+      if (currentChunkWordsCount + partWordsCount > chunkSize) {
+        chunks.push(currentChunk.join(separator).trim());
+        
+        let overlapChunk: string[] = [];
+        let overlapWordsCount = 0;
+        for (let j = currentChunk.length - 1; j >= 0; j--) {
+          const wCount = currentChunk[j].split(/\s+/).filter(Boolean).length;
+          if (overlapWordsCount + wCount <= overlap) {
+            overlapChunk.unshift(currentChunk[j]);
+            overlapWordsCount += wCount;
+          } else {
+            break;
+          }
+        }
+        currentChunk = overlapChunk;
+        currentChunkWordsCount = overlapWordsCount;
+      }
+      
+      currentChunk.push(cleanPart);
+      currentChunkWordsCount += partWordsCount;
+    }
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join(separator).trim());
+  }
+
+  return chunks.filter(Boolean);
+}
+
+export function splitTextIntoChunks(text: string, chunkSize: number = 512, overlap: number = 128): string[] {
+  try {
+    const recursiveChunks = splitTextRecursively(text, chunkSize, overlap);
+    if (recursiveChunks.length > 0) {
+      return recursiveChunks;
+    }
+  } catch (error) {
+    console.error("Recursive chunking failed, falling back to sliding-window:", error);
+  }
+  return splitTextSlidingWindow(text, chunkSize, overlap);
 }
 
 // Global in-memory store for serverless functions (clears on cold start)
